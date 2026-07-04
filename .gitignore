@@ -1,0 +1,4 @@
+.claude/
+*.json.bak
+Thumbs.db
+.DS_Store
