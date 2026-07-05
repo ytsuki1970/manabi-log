@@ -80,6 +80,8 @@
   .chip.on{color:#fff; font-weight:500;}
   .chip.add{background:transparent; border:1px dashed var(--border-strong); color:var(--muted);}
   .chip.add:hover{border-color:var(--accent); color:var(--accent);}
+  .chip.done{opacity:.45; cursor:default;}
+  .chip.done:hover{border-color:transparent;}
   .manage-link{font-size:12px; color:var(--accent); cursor:pointer; user-select:none; font-weight:400;}
   /* category manager */
   .cat-manager{display:none; background:var(--surface-2); border-radius:10px; padding:12px; margin-bottom:12px;}
@@ -92,6 +94,9 @@
   .cm-row .cm-del:hover{color:#c0392b;}
   .cm-add-name{margin-bottom:8px;}
   .cm-label{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .cm-divider{border-top:1px dashed var(--border-strong); margin:14px 0 12px;}
+  .cm-label-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  .cm-label-row .cm-label{margin-bottom:0;}
   .swatches{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
   .swatch{width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:.1s;}
   .swatch.on{border-color:var(--text); transform:scale(1.12);}
@@ -211,6 +216,13 @@
     <div class="card-title"><span>＋ 今日の学びをさっと記録</span><span class="manage-link" id="manageCats">項目を編集</span></div>
     <div class="cat-manager" id="catManager">
       <div class="cm-list" id="cmList"></div>
+      <div class="cm-divider"></div>
+      <div class="cm-label-row">
+        <span class="cm-label">高校生セット（タップで教科を追加）</span>
+        <span class="manage-link" id="addAllPreset">まとめて追加</span>
+      </div>
+      <div class="chips" id="presetChips" style="margin-bottom:2px;"></div>
+      <div class="cm-divider"></div>
       <div class="cm-label">項目を追加</div>
       <input type="text" id="newCatName" class="cm-add-name" placeholder="例：法律・数学・英語" autocomplete="off" maxlength="12">
       <div class="cm-label">色を選ぶ</div>
@@ -283,6 +295,19 @@ const DEFAULT_CATEGORIES = [
 ];
 const PALETTE = ["#534AB7","#D85A30","#1D9E75","#185FA5","#993556",
                  "#BA7517","#639922","#0F6E56","#7F77DD","#888780"];
+/* 高校生セット：タップで追加できる教科プリセット */
+const HS_PRESET = [
+  { name:"現代文",   color:"#D85A30" },
+  { name:"古典",     color:"#993556" },
+  { name:"数学",     color:"#185FA5" },
+  { name:"英語",     color:"#534AB7" },
+  { name:"物理",     color:"#0F6E56" },
+  { name:"化学",     color:"#BA7517" },
+  { name:"生物",     color:"#639922" },
+  { name:"地理歴史", color:"#7F77DD" },
+  { name:"公民",     color:"#1D9E75" },
+  { name:"情報",     color:"#888780" },
+];
 const WEEKLY_GOAL_HOURS = 5;   // 週の目標時間（時間）
 
 let categories = [];   // DBから読み込む
@@ -571,9 +596,41 @@ function openCatManager(open){
   if(willOpen){
     selSwatch = nextColor();
     buildCatList();
+    buildPresetChips();
     buildSwatches();
     document.getElementById("newCatName").value = "";
   }
+}
+/* ---------- 高校生セット ---------- */
+function buildPresetChips(){
+  const box = document.getElementById("presetChips");
+  box.innerHTML = "";
+  let remain = 0;
+  HS_PRESET.forEach(p=>{
+    const exists = categories.some(c=>c.name===p.name);
+    if(!exists) remain++;
+    const el = document.createElement("div");
+    el.className = "chip" + (exists?" done":"");
+    el.textContent = exists ? "✓ "+p.name : "＋ "+p.name;
+    if(!exists) el.onclick = ()=> addPresetCats([p]);
+    box.appendChild(el);
+  });
+  document.getElementById("addAllPreset").style.display = remain>0 ? "" : "none";
+}
+async function addPresetCats(list){
+  const news = list.filter(p=>!categories.some(c=>c.name===p.name));
+  if(news.length===0) return;
+  for(const p of news){
+    const cat = { name:p.name, color:p.color, order:categories.length };
+    await putCat(cat);
+    categories.push(cat);
+  }
+  selCat = news[0].name;
+  buildChips();
+  buildCatList();
+  buildPresetChips();
+  render();
+  toast(news.length===1 ? `「${news[0].name}」を追加しました` : `${news.length}教科を追加しました 🏫`);
 }
 async function addCategory(){
   const input = document.getElementById("newCatName");
@@ -587,6 +644,7 @@ async function addCategory(){
   input.value = "";
   buildChips();
   buildCatList();
+  buildPresetChips();
   selSwatch = nextColor();
   buildSwatches();
   render();
@@ -604,6 +662,7 @@ async function removeCategory(name){
   if(selCat===name) selCat = categories[0].name;
   buildChips();
   buildCatList();
+  buildPresetChips();
   render();
   toast(`「${name}」を削除しました`);
 }
@@ -641,6 +700,7 @@ function setupInputs(){
   document.getElementById("manageCats").onclick = ()=> openCatManager();
   document.getElementById("closeCatBtn").onclick = ()=> openCatManager(false);
   document.getElementById("addCatBtn").onclick = addCategory;
+  document.getElementById("addAllPreset").onclick = ()=> addPresetCats(HS_PRESET);
   document.getElementById("newCatName").addEventListener("keydown", e=>{
     if(e.key==="Enter"){ e.preventDefault(); addCategory(); }
   });
