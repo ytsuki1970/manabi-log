@@ -135,6 +135,29 @@
   .btn:active{transform:scale(.98);}
   .btn.block{width:100%; margin-top:12px;}
   .btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--border-strong); font-weight:500;}
+  /* timer */
+  .timer-card{text-align:center;}
+  .tmode{display:flex; gap:6px; background:var(--surface-2); border-radius:10px; padding:4px; margin-bottom:14px;}
+  .tmode-btn{flex:1; font-size:13px; padding:8px 0; border-radius:8px; cursor:pointer; color:var(--muted); user-select:none; transition:.12s;}
+  .tmode-btn.on{background:var(--surface); color:var(--text); font-weight:600; box-shadow:var(--shadow);}
+  .tphase{font-size:13px; color:var(--muted); height:20px; font-weight:600;}
+  .tphase.break{color:var(--warn);}
+  .tclock{font-size:56px; font-weight:600; line-height:1.1; letter-spacing:.02em; font-variant-numeric:tabular-nums; margin:2px 0 4px;}
+  .tclock.break{color:var(--warn);}
+  .tpomos{font-size:15px; min-height:22px; letter-spacing:2px;}
+  .tpomos small{color:var(--hint); font-size:12px; letter-spacing:0; margin-left:6px;}
+  .tctrl{display:flex; gap:8px; margin:12px 0 6px;}
+  .tctrl .tbtn-main{flex:1; font-size:16px; padding:13px 0;}
+  .tctrl .tbtn{flex:none; padding:13px 18px;}
+  .trow2{display:flex; align-items:center; justify-content:space-between; margin-top:8px; flex-wrap:wrap; gap:8px;}
+  .trow2 .tright{display:flex; gap:14px;}
+  .tlink{font-size:12px; color:var(--accent); cursor:pointer; user-select:none;}
+  .tlink.muted{color:var(--hint);}
+  .tsettings{display:none; margin-top:12px; border-top:1px dashed var(--border-strong); padding-top:12px; text-align:left;}
+  .tsettings.open{display:block;}
+  .tset-row{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); margin-bottom:8px;}
+  .tset-row span:first-child{width:82px; flex:none;}
+  .tset-row input{width:70px; flex:none; text-align:center; padding:7px;}
   /* entries */
   .entry{
     display:flex; align-items:flex-start; gap:12px; padding:12px 4px;
@@ -207,6 +230,35 @@
       <span style="color:var(--muted);">週の目標</span>
       <div class="goal-track"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
       <span class="goal-val" id="goalVal">0 / 5.0h</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="card timer-card">
+    <div class="tmode" id="tMode">
+      <div class="tmode-btn on" data-mode="pomodoro">🍅 ポモドーロ</div>
+      <div class="tmode-btn" data-mode="stopwatch">⏱ ストップウォッチ</div>
+    </div>
+    <div class="tphase" id="tPhase">集中</div>
+    <div class="tclock" id="tClock">25:00</div>
+    <div class="tpomos" id="tPomos"></div>
+    <div class="tctrl">
+      <button class="btn tbtn-main" id="tStart">▶ 開始</button>
+      <button class="btn ghost tbtn" id="tReset">リセット</button>
+    </div>
+    <div class="trow2">
+      <span class="tlink" id="tRecord">⬇ この時間を記録に反映</span>
+      <span class="tright">
+        <span class="tlink" id="tMuteBtn">🔔 音</span>
+        <span class="tlink" id="tSetBtn">⚙ 設定</span>
+      </span>
+    </div>
+    <div class="tsettings" id="tSettings">
+      <div class="tset-row"><span>集中</span><input type="number" id="setFocus" min="1" max="180" inputmode="numeric"><span>分</span></div>
+      <div class="tset-row"><span>休憩</span><input type="number" id="setBreak" min="1" max="60" inputmode="numeric"><span>分</span></div>
+      <div class="tset-row"><span>長い休憩</span><input type="number" id="setLong" min="1" max="90" inputmode="numeric"><span>分</span></div>
+      <div class="tset-row"><span>長休憩まで</span><input type="number" id="setEvery" min="2" max="12" inputmode="numeric"><span>回ごと</span></div>
     </div>
   </div>
 </section>
@@ -780,10 +832,183 @@ function toast(msg){
   toastTimer = setTimeout(()=>t.classList.remove("show"), 1900);
 }
 
+/* ---------- 学習タイマー（ポモドーロ / ストップウォッチ） ---------- */
+const TKEY = "manabi-timer";
+const T = {
+  mode:"pomodoro", running:false, phase:"focus",
+  phaseStart:0, phaseElapsed:0,
+  sessionFocusMs:0, pomoCount:0, curBreakMs:5*60000,
+  focus:25, brk:5, long:15, every:4, muted:false
+};
+let tAudio;
+
+function saveT(){
+  // 実行中は経過を phaseElapsed に畳んでから保存（＝閉じても最後の値で止まる）
+  if(T.running){ const now=Date.now(); T.phaseElapsed += now - T.phaseStart; T.phaseStart = now; }
+  try{ localStorage.setItem(TKEY, JSON.stringify(T)); }catch(e){}
+}
+function loadT(){
+  try{ const s = JSON.parse(localStorage.getItem(TKEY)); if(s) Object.assign(T, s); }catch(e){}
+  T.running = false; T.phaseStart = 0;   // 再読み込み時は一時停止で復帰（閉じていた間は数えない）
+}
+function segElapsed(){ return T.phaseElapsed + (T.running ? Date.now()-T.phaseStart : 0); }
+function targetMs(){ return T.mode==="stopwatch" ? Infinity : (T.phase==="focus" ? T.focus*60000 : T.curBreakMs); }
+function currentStudyMs(){
+  if(T.mode==="stopwatch") return segElapsed();
+  let ms = T.sessionFocusMs;
+  if(T.phase==="focus") ms += Math.min(segElapsed(), T.focus*60000);
+  return ms;
+}
+function fmtClock(ms){
+  const s = Math.max(0, Math.round(ms/1000));
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = s%60;
+  return h>0 ? `${h}:${pad(m)}:${pad(ss)}` : `${pad(m)}:${pad(ss)}`;
+}
+function beep(kind){
+  if(T.muted) return;
+  try{
+    tAudio = tAudio || new (window.AudioContext||window.webkitAudioContext)();
+    if(tAudio.state==="suspended") tAudio.resume();
+    const now = tAudio.currentTime;
+    const seq = kind==="focusEnd" ? [660,880,1100] : [880,660];
+    seq.forEach((f,i)=>{
+      const o=tAudio.createOscillator(), g=tAudio.createGain();
+      o.type="sine"; o.frequency.value=f; o.connect(g); g.connect(tAudio.destination);
+      const t=now+i*0.16;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.28,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.15);
+      o.start(t); o.stop(t+0.17);
+    });
+  }catch(e){}
+}
+function notify(kind){
+  beep(kind);
+  try{ if(!T.muted && navigator.vibrate) navigator.vibrate(kind==="focusEnd"?[120,60,120]:[90]); }catch(e){}
+  toast(kind==="focusEnd" ? "集中おつかれさま！休憩へ ☕" : "休憩おわり。次の集中へ 🍅");
+}
+function tTick(){
+  if(T.running && T.mode==="pomodoro"){
+    if(segElapsed() >= targetMs()){
+      if(T.phase==="focus"){
+        T.sessionFocusMs += T.focus*60000;
+        T.pomoCount++;
+        const longNow = (T.pomoCount % T.every)===0;
+        T.curBreakMs = (longNow ? T.long : T.brk)*60000;
+        T.phase="break"; T.phaseElapsed=0; T.phaseStart=Date.now();   // 休憩は自動スタート
+        notify("focusEnd");
+      }else{
+        T.phase="focus"; T.phaseElapsed=0; T.phaseStart=0; T.running=false;   // 次の集中は手動で開始
+        notify("breakEnd");
+      }
+      saveT();
+    }
+  }
+  renderTimer();
+}
+function renderTimer(){
+  const clockEl=document.getElementById("tClock");
+  if(!clockEl) return;
+  const phaseEl=document.getElementById("tPhase");
+  const pomEl=document.getElementById("tPomos");
+  const startEl=document.getElementById("tStart");
+  if(T.mode==="stopwatch"){
+    clockEl.textContent = fmtClock(segElapsed());
+    clockEl.classList.remove("break");
+    phaseEl.classList.remove("break");
+    phaseEl.textContent = T.running ? "計測中…" : (segElapsed()>0 ? "一時停止中" : "空いた時間にサッと計測");
+    pomEl.innerHTML = "";
+  }else{
+    clockEl.textContent = fmtClock(targetMs()-segElapsed());
+    const isBreak = T.phase==="break";
+    clockEl.classList.toggle("break", isBreak);
+    phaseEl.classList.toggle("break", isBreak);
+    phaseEl.textContent = isBreak ? "休憩" : "集中";
+    const c = T.pomoCount;
+    pomEl.innerHTML = c>0 ? ("🍅".repeat(Math.min(c,8)) + `<small>${c}回完了</small>`)
+                          : '<small style="color:var(--hint)">タイマーで集中を計ろう</small>';
+  }
+  startEl.textContent = T.running ? "⏸ 一時停止" : (segElapsed()>0 ? "▶ 再開" : "▶ 開始");
+}
+function renderTimerModeUI(){
+  document.querySelectorAll(".tmode-btn").forEach(b=> b.classList.toggle("on", b.dataset.mode===T.mode));
+  document.getElementById("tSetBtn").style.display = T.mode==="pomodoro" ? "" : "none";
+  if(T.mode!=="pomodoro") document.getElementById("tSettings").classList.remove("open");
+}
+function tToggle(){
+  if(T.running){
+    T.phaseElapsed = segElapsed(); T.running=false;
+  }else{
+    if(T.mode==="pomodoro" && T.phase==="focus" && segElapsed()===0) T.curBreakMs = T.brk*60000;
+    T.phaseStart = Date.now(); T.running=true;
+    try{ tAudio = tAudio || new (window.AudioContext||window.webkitAudioContext)(); if(tAudio.state==="suspended") tAudio.resume(); }catch(e){}
+  }
+  saveT(); renderTimer();
+}
+function tReset(){
+  const sm = Math.round(currentStudyMs()/60000);
+  if(sm>0 && !confirm(`計測中の約${sm}分を破棄してリセットしますか？\n（記録に残すなら先に「⬇ この時間を記録に反映」を）`)) return;
+  T.running=false; T.phase="focus"; T.phaseElapsed=0; T.phaseStart=0; T.sessionFocusMs=0; T.pomoCount=0;
+  saveT(); renderTimer();
+}
+function tReflect(){
+  const sm = Math.round(currentStudyMs()/60000);
+  if(sm<=0){ toast("まだ計測がありません"); return; }
+  const minsInput=document.getElementById("mins");
+  minsInput.value = sm;
+  document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
+  T.running=false; T.phase="focus"; T.phaseElapsed=0; T.phaseStart=0; T.sessionFocusMs=0; T.pomoCount=0;
+  saveT(); renderTimer();
+  const titleEl=document.getElementById("title");
+  titleEl.scrollIntoView({behavior:"smooth", block:"center"});
+  setTimeout(()=>titleEl.focus(), 300);
+  toast(`計測した${sm}分をフォームに入れました ⬇`);
+}
+function tSetMode(m){
+  if(T.mode===m) return;
+  const sm = Math.round(currentStudyMs()/60000);
+  if(sm>0 && !confirm("計測中のデータを破棄してモードを切り替えますか？")) return;
+  T.mode=m; T.running=false; T.phase="focus"; T.phaseElapsed=0; T.phaseStart=0; T.sessionFocusMs=0; T.pomoCount=0;
+  saveT(); renderTimerModeUI(); renderTimer();
+}
+function tSetupSettingsInputs(){
+  [["setFocus","focus"],["setBreak","brk"],["setLong","long"],["setEvery","every"]].forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    el.value = T[key];
+    el.onchange = ()=>{
+      let v = parseInt(el.value,10);
+      if(isNaN(v)||v<1) v = T[key];
+      if(key==="every" && v<2) v=2;
+      T[key]=v; el.value=v;
+      saveT(); renderTimer();
+    };
+  });
+}
+function tSetupTimer(){
+  document.querySelectorAll(".tmode-btn").forEach(b=> b.onclick=()=>tSetMode(b.dataset.mode));
+  document.getElementById("tStart").onclick = tToggle;
+  document.getElementById("tReset").onclick = tReset;
+  document.getElementById("tRecord").onclick = tReflect;
+  document.getElementById("tSetBtn").onclick = ()=> document.getElementById("tSettings").classList.toggle("open");
+  const mute=document.getElementById("tMuteBtn");
+  function paintMute(){ mute.textContent = T.muted ? "🔕 音オフ" : "🔔 音"; mute.classList.toggle("muted", T.muted); }
+  mute.onclick = ()=>{ T.muted=!T.muted; paintMute(); saveT(); if(!T.muted) beep("breakEnd"); };
+  paintMute();
+  tSetupSettingsInputs();
+  renderTimerModeUI();
+  renderTimer();
+  setInterval(tTick, 250);
+  document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveT(); });
+  window.addEventListener("beforeunload", saveT);
+  setInterval(()=>{ if(T.running) saveT(); }, 5000);
+}
+
 /* ---------- 起動 ---------- */
 (async function init(){
   document.getElementById("today").textContent = todayStr();
   setupInputs();
+  loadT();
+  tSetupTimer();
   try{
     await openDB();
     categories = await getAllCats();
