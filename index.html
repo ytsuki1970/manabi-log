@@ -377,6 +377,13 @@
   .td-phase .p2{width:98px; flex:none; color:var(--hint); font-family:var(--num); font-variant-numeric:tabular-nums;}
   .td-phase .p3{flex:1; color:var(--muted);}
   .td-phase.on{background:var(--accent-soft); border-radius:8px; padding-left:8px; padding-right:8px; border-bottom-color:transparent;}
+  .ns-item{display:flex; align-items:flex-start; gap:4px;}
+  .ns-item label{flex:1; min-width:0;}
+  .ns-play{
+    flex:none; font-size:10px; color:var(--accent); text-decoration:none;
+    padding:4px 5px; border-radius:5px; line-height:1.4; opacity:.75; transition:.14s;
+  }
+  .ns-play:hover{opacity:1; background:var(--accent-soft);}
   .td-srcs{font-size:11.5px; color:var(--muted); margin-top:13px; line-height:2;}
   .td-srcs a{color:var(--accent);}
 
@@ -581,6 +588,35 @@
 </section>
 
 <section>
+  <div class="card">
+    <div class="card-title">
+      <span>日本史・流れがわかる39講</span>
+      <span class="manage-link" id="nsReflect">⬇ 今日の分を記録に反映</span>
+    </div>
+    <div class="td-top">
+      <span class="td-words" id="nsMin">0</span>
+      <span class="td-of">分 / <span id="nsTotalMin">0</span>分</span>
+      <span class="td-books" id="nsCount">0 / 39講</span>
+    </div>
+    <div class="goal-track"><div class="goal-fill" id="nsFill" style="width:0%"></div></div>
+    <div class="td-stage" id="nsStage"></div>
+    <div class="td-today" id="nsToday"></div>
+    <details class="td">
+      <summary>時代別の進み具合</summary>
+      <div id="nsEras" style="margin-top:10px;"></div>
+    </details>
+    <details class="td">
+      <summary>講の一覧（39講）</summary>
+      <div id="nsList"></div>
+    </details>
+    <div class="td-srcs">
+      <a href="https://youtube.com/playlist?list=PL_3pRpqIh4ENHmkqrKHeeMz2zkIj9x01G" target="_blank" rel="noopener">再生リストを開く</a>
+      <span style="color:var(--hint);">／【日本史予備校】にほよび・全39本・無料</span>
+    </div>
+  </div>
+</section>
+
+<section>
   <div class="card" id="brkCard">
     <div class="card-title"><span>カテゴリ別（今月）</span></div>
     <div id="breakdown"></div>
@@ -634,7 +670,7 @@ let categories = [];   // DBから読み込む
 let selSwatch = PALETTE[0];
 
 /* ---------- IndexedDB ---------- */
-const DB_NAME = "manabi-log", DB_VER = 4;
+const DB_NAME = "manabi-log", DB_VER = 5;
 let db;
 function openDB(){
   return new Promise((res, rej)=>{
@@ -654,6 +690,9 @@ function openDB(){
       }
       if(!d.objectStoreNames.contains("cca")){
         d.createObjectStore("cca", { keyPath:"id" });
+      }
+      if(!d.objectStoreNames.contains("nihonshi")){
+        d.createObjectStore("nihonshi", { keyPath:"id" });
       }
     };
     r.onsuccess = e=>{ db = e.target.result; res(); };
@@ -679,6 +718,10 @@ function getAllCca(){ return reqP(store("cca","readonly").getAll()).then(r=>r||[
 function putCca(o){ return reqP(store("cca","readwrite").put(o)); }
 function delCca(id){ return reqP(store("cca","readwrite").delete(id)); }
 
+function getAllNs(){ return reqP(store("nihonshi","readonly").getAll()).then(r=>r||[]); }
+function putNs(o){ return reqP(store("nihonshi","readwrite").put(o)); }
+function delNs(id){ return reqP(store("nihonshi","readwrite").delete(id)); }
+
 /* ---------- 日付ユーティリティ ---------- */
 const pad = n=> String(n).padStart(2,"0");
 const ymd = d=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -701,6 +744,7 @@ function render(){
   renderEntries();
   renderTadoku();
   renderCca();
+  renderNs();
 }
 
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`; }
@@ -1078,7 +1122,8 @@ async function save(){
 function exportJSON(){
   const tadoku = Object.keys(tadokuChecked).map(id=>({ id, ts:tadokuChecked[id] }));
   const cca = Object.keys(ccaDone).map(id=>({ id, ts:ccaDone[id] }));
-  const data = JSON.stringify({ app:"manabi-log", version:3, exportedAt:new Date().toISOString(), entries, tadoku, cca }, null, 2);
+  const nihonshi = Object.keys(nsDone).map(id=>({ id, ts:nsDone[id] }));
+  const data = JSON.stringify({ app:"manabi-log", version:4, exportedAt:new Date().toISOString(), entries, tadoku, cca, nihonshi }, null, 2);
   const blob = new Blob([data], { type:"application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -1097,9 +1142,11 @@ function importJSON(ev){
       if(!Array.isArray(list)) throw new Error("形式が違います");
       const td = (!Array.isArray(data) && Array.isArray(data.tadoku)) ? data.tadoku : [];
       const cc = (!Array.isArray(data) && Array.isArray(data.cca)) ? data.cca : [];
+      const ns = (!Array.isArray(data) && Array.isArray(data.nihonshi)) ? data.nihonshi : [];
       const msg = `${list.length}件を読み込みます。同じIDは上書きされます。`
         + (td.length ? `\n多読のチェック${td.length}冊分も復元します。` : "")
         + (cc.length ? `\nClaude Code Academyのチェック${cc.length}レッスン分も復元します。` : "")
+        + (ns.length ? `\n日本史のチェック${ns.length}講分も復元します。` : "")
         + "\nよろしいですか？";
       if(!confirm(msg)) return;
       for(const e of list){
@@ -1118,9 +1165,16 @@ function importJSON(ev){
         await putCca(rec);
         ccaDone[rec.id] = rec.ts;
       }
+      for(const r of ns){
+        if(!r || !r.id || !nsVideo[r.id]) continue;
+        const rec = { id:String(r.id), ts:r.ts || Date.now() };
+        await putNs(rec);
+        nsDone[rec.id] = rec.ts;
+      }
       entries = await getAll();
       buildTadokuList();
       buildCcaList();
+      buildNsList();
       render();
       toast(`${list.length}件を読み込みました`);
     }catch(err){ toast("読み込みに失敗しました"); }
@@ -1869,6 +1923,223 @@ function setupCca(){
   document.getElementById("ccaReflect").onclick = ccaReflect;
 }
 
+/* ---------- 日本史・流れがわかる39講 ----------
+   YouTube【日本史予備校】にほよび の再生リスト（2026-08-11時点・全39本）。
+   時代ごとにまとめ直してある。動画の長さがそのまま学習時間になる。 */
+const NS_CAT = "日本史";
+const NS_LIST = "PL_3pRpqIh4ENHmkqrKHeeMz2zkIj9x01G";
+const NS_ERAS = [
+  { name:"原始・ヤマト", color:"#7F77DD", from:1,  to:3 },
+  { name:"飛鳥・奈良",   color:"#534AB7", from:4,  to:9 },
+  { name:"平安",         color:"#185FA5", from:10, to:15 },
+  { name:"鎌倉",         color:"#1D9E75", from:16, to:19 },
+  { name:"室町・戦国",   color:"#639922", from:20, to:23 },
+  { name:"安土桃山・江戸初期", color:"#BA7517", from:24, to:27 },
+  { name:"江戸中後期",   color:"#D85A30", from:28, to:34 },
+  { name:"幕末・明治",   color:"#993556", from:35, to:39 }
+];
+/* [講, 題, 長さ, 動画ID] */
+const NS_VIDEOS = [
+  [1,"旧石器・縄文・弥生","42:02","StLRJPhLTKc"],
+  [2,"漢書・後漢書・魏志・宋書","25:29","Exxbliaqv98"],
+  [3,"古墳文化と氏姓制度","30:13","zstGvNpj570"],
+  [4,"継体〜皇極天皇","31:03","TKx01JQfEOQ"],
+  [5,"孝徳〜文武天皇","39:05","DuOOFZl01Sk"],
+  [6,"差がつく律令制度","34:19","1f4mzDfXX88"],
+  [7,"飛鳥・白鳳文化","30:40","u1JyPX0CPlc"],
+  [8,"奈良時代の政治・外交","43:19","Vf8fd99seC8"],
+  [9,"天平文化","22:45","wP2pkzzQAZE"],
+  [10,"平安時代前期","26:32","jn97Aa-5uUA"],
+  [11,"弘仁・貞観文化","26:34","0IpTkve_OL0"],
+  [12,"摂関政治","44:33","nGO5WHone_0"],
+  [13,"国風文化","28:09","EIzWgEJJECE"],
+  [14,"荘園の発達と武士の台頭","46:35","ZbXKOV_77os"],
+  [15,"院政・平氏政権・院政期文化","46:14","YeRA6SGFSMU"],
+  [16,"源平の争乱と鎌倉幕府の成立","40:42","Zl0O7rTgnWY"],
+  [17,"執権政治の確立","34:37","NhOJG8cFMVo"],
+  [18,"鎌倉幕府の滅亡と産業社会","43:40","2X1A-wN7DgI"],
+  [19,"鎌倉文化","36:58","UQecXZQiTMw"],
+  [20,"南北朝の動乱と室町幕府の成立","37:22","f1-xJE1xXko"],
+  [21,"室町外交と一揆、応仁の乱","49:40","4-B9BtY7lQo"],
+  [22,"戦国時代と下剋上","40:57","uAfR_MABCIs"],
+  [23,"室町文化","30:30","lPEUS0jfhyA"],
+  [24,"信長と秀吉","46:48","DFg9raqDLE8"],
+  [25,"幕藩体制の確立","47:14","Qu9JqrG_i-k"],
+  [26,"江戸初期外交","34:11","aAoiHcBn1Wk"],
+  [27,"桃山・寛永期文化","27:16","ZqhrDhl_THs"],
+  [28,"文治政治の展開","40:40","bVi9SAfHMXQ"],
+  [29,"江戸の産業社会","25:41","OowAA7Tcd_U"],
+  [30,"元禄文化","30:40","6NdlGpXPDjA"],
+  [31,"享保の改革と田沼時代","30:20","FBanukTqreo"],
+  [32,"寛政の改革と天保の改革","27:12","COJ0Xk0ZZq0"],
+  [33,"宝暦・天明期文化","34:18","Buw0asfi5pQ"],
+  [34,"化政文化","29:27","q-9Tjhx83uU"],
+  [35,"ペリーの来航と開国","38:03","o-D9s9n2Z9Y"],
+  [36,"尊王攘夷運動と幕府滅亡","48:38","OeRdDsUkoM8"],
+  [37,"明治維新","36:58","s-t0UPAEz4E"],
+  [38,"殖産興業と貨幣制度","34:36","dsymUUn6ruU"],
+  [39,"民権運動と士族の乱","45:06","svj1HHTlgaU"]
+];
+
+let nsDone = {};        // "12" -> チェックした時刻(ms)
+const nsVideo = {};     // "12" -> { no, title, dur, s, id }
+NS_VIDEOS.forEach(([no, title, dur, id])=>{
+  nsVideo[String(no)] = { no, title, dur, s:ccaSecs(dur), id };
+});
+const NS_TOTAL = NS_VIDEOS.length;
+const NS_TOTAL_S = NS_VIDEOS.reduce((s,v)=>s+ccaSecs(v[2]), 0);
+
+function nsSeconds(){
+  let s = 0;
+  for(const k in nsDone){ if(nsVideo[k]) s += nsVideo[k].s; }
+  return s;
+}
+function nsTodayKeys(){
+  const t = ymd(new Date());
+  return Object.keys(nsDone).filter(k=> nsVideo[k] && ymd(new Date(nsDone[k]))===t )
+                            .sort((a,b)=>(+a)-(+b));
+}
+
+function buildNsList(){
+  const host = document.getElementById("nsList");
+  if(!host) return;
+  host.innerHTML = "";
+  NS_ERAS.forEach(era=>{
+    const det = document.createElement("details");
+    det.className = "td-block";
+    det.style.setProperty("--bc", era.color);
+    const vids = NS_VIDEOS.filter(v=> v[0]>=era.from && v[0]<=era.to );
+    const mins = Math.round(vids.reduce((s,v)=>s+ccaSecs(v[2]),0)/60);
+    const sum = document.createElement("summary");
+    sum.innerHTML = `<span></span><span class="td-bmeta">${era.from}〜${era.to}講・${vids.length}本・${mins}分</span>`;
+    sum.firstChild.textContent = era.name;
+    det.appendChild(sum);
+    const box = document.createElement("div");
+    box.className = "td-list";
+    vids.forEach(([no, title, dur, id])=>{
+      const item = document.createElement("div");
+      item.className = "ns-item";
+      const lab = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.dataset.key = String(no); cb.checked = !!nsDone[String(no)];
+      const sp = document.createElement("span");
+      sp.textContent = `${no}講 ${title}（${dur}）`;
+      lab.appendChild(cb); lab.appendChild(sp);
+      const play = document.createElement("a");
+      play.className = "ns-play";
+      play.href = `https://www.youtube.com/watch?v=${id}&list=${NS_LIST}`;
+      play.target = "_blank"; play.rel = "noopener";
+      play.title = `${no}講を見る`;
+      play.textContent = "▶";
+      item.appendChild(lab); item.appendChild(play);
+      box.appendChild(item);
+    });
+    det.appendChild(box);
+    host.appendChild(det);
+  });
+}
+
+function buildNsEras(){
+  const host = document.getElementById("nsEras");
+  if(!host) return;
+  host.innerHTML = "";
+  NS_ERAS.forEach(era=>{
+    const total = era.to - era.from + 1;
+    let done = 0;
+    for(let n=era.from; n<=era.to; n++) if(nsDone[String(n)]) done++;
+    const pct = Math.round(done/total*100);
+    const el = document.createElement("div");
+    el.className = "brk-row";
+    el.innerHTML = `<span class="brk-name" style="width:auto; flex:1;"></span>
+      <div class="brk-track" style="flex:none; width:34%;"><div class="brk-fill" style="width:${pct}%; background:${era.color}"></div></div>
+      <span class="brk-val">${done}/${total}</span>`;
+    el.querySelector(".brk-name").textContent = era.name;
+    host.appendChild(el);
+  });
+}
+
+function renderNs(){
+  const el = document.getElementById("nsMin");
+  if(!el) return;
+  const s = nsSeconds();
+  const n = Object.keys(nsDone).filter(k=>nsVideo[k]).length;
+  el.textContent = Math.round(s/60).toLocaleString("ja-JP");
+  document.getElementById("nsTotalMin").textContent = Math.round(NS_TOTAL_S/60).toLocaleString("ja-JP");
+  document.getElementById("nsCount").textContent = `${n} / ${NS_TOTAL}講`;
+  document.getElementById("nsFill").style.width = (n/NS_TOTAL*100).toFixed(1)+"%";
+
+  let msg;
+  if(n===0) msg = "1講「旧石器・縄文・弥生」から。1本40分前後です。";
+  else if(n>=NS_TOTAL) msg = "39講 完走。通史がひと通り入りました。";
+  else{
+    let next = 1;
+    while(next<=NS_TOTAL && nsDone[String(next)]) next++;
+    const era = NS_ERAS.find(e=> next>=e.from && next<=e.to );
+    msg = `次は${next}講「${nsVideo[String(next)].title}」${era ? `（${era.name}）` : ""}。`;
+  }
+  document.getElementById("nsStage").textContent = msg;
+
+  const today = nsTodayKeys();
+  const ts = today.reduce((a,k)=>a+nsVideo[k].s, 0);
+  document.getElementById("nsToday").textContent =
+    today.length ? `今日チェックした講：${today.length}本・${Math.round(ts/60)}分` : "";
+
+  buildNsEras();
+}
+
+async function ensureNsCat(){
+  if(categories.find(c=>c.name===NS_CAT)) return;
+  const cat = { name:NS_CAT, color:nextColor(), order:categories.length };
+  await putCat(cat);
+  categories.push(cat);
+  buildChips();
+}
+
+async function nsReflect(){
+  const keys = nsTodayKeys();
+  if(keys.length===0){ toast("今日チェックした講がありません"); return; }
+  const mins = Math.round(keys.reduce((a,k)=>a+nsVideo[k].s,0)/60);
+  await ensureNsCat();
+  selCat = NS_CAT;
+  buildChips();
+  const nums = keys.map(k=>nsVideo[k].no);
+  document.getElementById("title").value =
+    keys.length===1 ? `日本史 ${nums[0]}講 ${nsVideo[keys[0]].title}` : `日本史 ${nums[0]}〜${nums[nums.length-1]}講（${keys.length}本）`;
+  document.getElementById("mins").value = mins;
+  document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
+  const memo = document.getElementById("memo");
+  const titles = keys.map(k=>`${nsVideo[k].no}講 ${nsVideo[k].title}`).join("、");
+  memo.value = memo.value ? memo.value + "\n" + titles : titles;
+  const more = document.getElementById("more");
+  if(!more.classList.contains("open")){
+    more.classList.add("open");
+    document.getElementById("moreToggle").textContent = "－ 閉じる";
+  }
+  const titleEl = document.getElementById("title");
+  titleEl.scrollIntoView({ behavior:"smooth", block:"center" });
+  toast(`今日の${keys.length}講・${mins}分を入れました ⬇`);
+}
+
+function setupNs(){
+  const host = document.getElementById("nsList");
+  if(!host) return;
+  host.addEventListener("change", async e=>{
+    const cb = e.target;
+    if(!cb || cb.type!=="checkbox") return;
+    const key = cb.dataset.key;
+    if(cb.checked){
+      const ts = Date.now();
+      nsDone[key] = ts;
+      await putNs({ id:key, ts });
+    }else{
+      delete nsDone[key];
+      await delNs(key);
+    }
+    renderNs();
+  });
+  document.getElementById("nsReflect").onclick = nsReflect;
+}
+
 /* ---------- 起動 ---------- */
 (async function init(){
   document.getElementById("today").textContent = todayStr();
@@ -1886,6 +2157,7 @@ function setupCca(){
     entries = await getAll();
     (await getAllTadoku()).forEach(r=>{ tadokuChecked[r.id] = r.ts; });
     (await getAllCca()).forEach(r=>{ ccaDone[r.id] = r.ts; });
+    (await getAllNs()).forEach(r=>{ nsDone[r.id] = r.ts; });
   }catch(err){
     categories = DEFAULT_CATEGORIES.slice();
     toast("データベースを開けませんでした");
@@ -1896,6 +2168,8 @@ function setupCca(){
   setupTadoku();
   buildCcaList();
   setupCca();
+  buildNsList();
+  setupNs();
   render();
   // Enterで保存（内容欄）
   document.getElementById("title").addEventListener("keydown", e=>{
