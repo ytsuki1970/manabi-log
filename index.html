@@ -190,6 +190,38 @@
   /* footer actions */
   .footer{display:flex; gap:8px; padding:0 18px; margin-top:8px;}
   .footer .btn{flex:1; font-size:13px; padding:9px 0;}
+  /* 多読モジュール */
+  .td-top{display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; margin-bottom:9px;}
+  .td-words{font-size:26px; font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums;}
+  .td-of{font-size:12px; color:var(--hint);}
+  .td-books{margin-left:auto; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .td-stage{font-size:13px; color:var(--muted); margin-top:11px;}
+  .td-today{font-size:12px; color:var(--accent); margin-top:4px;}
+  details.td{margin-top:12px; border-top:1px dashed var(--border-strong); padding-top:11px;}
+  details.td>summary{font-size:13px; color:var(--accent); cursor:pointer; list-style:none; user-select:none;}
+  details.td>summary::-webkit-details-marker{display:none;}
+  details.td>summary::before{content:"▸ ";}
+  details.td[open]>summary::before{content:"▾ ";}
+  .td-block{margin-top:12px; border-left:3px solid var(--bc,var(--accent)); padding-left:11px;}
+  .td-block>summary{font-size:13px; font-weight:600; cursor:pointer; list-style:none; display:flex; gap:8px;
+    align-items:baseline; flex-wrap:wrap; user-select:none;}
+  .td-block>summary::-webkit-details-marker{display:none;}
+  .td-block .td-bmeta{font-size:11px; color:var(--hint); font-weight:400; font-variant-numeric:tabular-nums;}
+  .td-note{font-size:12px; color:var(--muted); margin:7px 0 8px;}
+  .td-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:0 12px;}
+  .td-list label{display:flex; gap:8px; align-items:flex-start; font-size:13px; line-height:1.5;
+    padding:3px 0; cursor:pointer; color:var(--muted);}
+  .td-list label:hover{color:var(--text);}
+  .td-list input{margin-top:4px; flex:none; width:15px; height:15px; accent-color:var(--accent);}
+  .td-list input:checked + span{color:var(--hint); text-decoration:line-through;}
+  .td-phase{display:flex; gap:10px; font-size:12px; padding:7px 0; border-bottom:1px solid var(--border);}
+  .td-phase:last-child{border-bottom:none;}
+  .td-phase .p1{width:80px; flex:none; font-weight:600; color:var(--text);}
+  .td-phase .p2{width:98px; flex:none; color:var(--hint); font-variant-numeric:tabular-nums;}
+  .td-phase .p3{flex:1; color:var(--muted);}
+  .td-phase.on{background:var(--accent-soft); border-radius:6px; padding-left:6px; padding-right:6px;}
+  .td-srcs{font-size:12px; color:var(--muted); margin-top:12px; line-height:1.95;}
+  .td-srcs a{color:var(--accent);}
   .hidden{display:none;}
   .toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
@@ -317,6 +349,70 @@
 </section>
 
 <section>
+  <div class="card">
+    <div class="card-title">
+      <span>英語多読 100万語</span>
+      <span class="manage-link" id="tdReflect">⬇ 今日の分を記録に反映</span>
+    </div>
+    <div class="td-top">
+      <span class="td-words" id="tdWords">0</span>
+      <span class="td-of">語 / 1,000,000</span>
+      <span class="td-books" id="tdBooks">0 / 159冊</span>
+    </div>
+    <div class="goal-track"><div class="goal-fill" id="tdFill" style="width:0%"></div></div>
+    <div class="td-stage" id="tdStage"></div>
+    <div class="td-today" id="tdToday"></div>
+    <details class="td">
+      <summary>本の一覧（Oxford Owl・無料の159冊）</summary>
+      <div id="tdBlocks"></div>
+    </details>
+    <details class="td">
+      <summary>ロードマップと無料素材</summary>
+      <div id="tdRoad" style="margin-top:10px;"></div>
+      <div class="td-srcs">
+        <a href="https://home.oxfordowl.co.uk/reading/free-ebooks/" target="_blank" rel="noopener">Oxford Owl</a>（159冊・要無料登録）／
+        <a href="https://er-central.com/" target="_blank" rel="noopener">ER-Central</a>（20段階・音声つき）／
+        <a href="https://storyweaver.org.in/en/" target="_blank" rel="noopener">StoryWeaver</a>（19,000冊・印刷可）／
+        <a href="https://breakingnewsenglish.com/" target="_blank" rel="noopener">Breaking News English</a>（7段階・登録不要）／
+        <a href="https://etc.usf.edu/lit2go/" target="_blank" rel="noopener">Lit2Go</a>（朗読つき古典）／
+        <a href="https://www.gutenberg.org/" target="_blank" rel="noopener">Project Gutenberg</a>（7万冊）／
+        <a href="https://www.seg.co.jp/sss/" target="_blank" rel="noopener">SSS書評システム</a>（語数を調べる）
+        <div style="margin-top:8px; color:var(--hint);">語数は各シリーズの既知の語数からの推定値です。3原則＝辞書は引かない・分からないところは飛ばす・つまらなければやめる。</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section>
+  <div class="card">
+    <div class="card-title">
+      <span>Claude Code Academy</span>
+      <span class="manage-link" id="ccaReflect">⬇ 今日の分を記録に反映</span>
+    </div>
+    <div class="td-top">
+      <span class="td-words" id="ccaMin">0</span>
+      <span class="td-of">分 / <span id="ccaTotalMin">0</span>分</span>
+      <span class="td-books" id="ccaCount">0 / 0レッスン</span>
+    </div>
+    <div class="goal-track"><div class="goal-fill" id="ccaFill" style="width:0%"></div></div>
+    <div class="td-stage" id="ccaStage"></div>
+    <div class="td-today" id="ccaToday"></div>
+    <details class="td">
+      <summary>コース別の進み具合</summary>
+      <div id="ccaCourses" style="margin-top:10px;"></div>
+    </details>
+    <details class="td">
+      <summary>レッスン一覧（6コース）</summary>
+      <div id="ccaList"></div>
+    </details>
+    <div class="td-srcs">
+      <a href="https://claude-code-academy.dev/" target="_blank" rel="noopener">claude-code-academy.dev</a>
+      <span style="color:var(--hint);">／ レッスン構成は2026-08-11時点。講座は随時追加されます。</span>
+    </div>
+  </div>
+</section>
+
+<section>
   <div class="card" id="brkCard">
     <div class="card-title"><span>カテゴリ別（今月）</span></div>
     <div id="breakdown"></div>
@@ -370,7 +466,7 @@ let categories = [];   // DBから読み込む
 let selSwatch = PALETTE[0];
 
 /* ---------- IndexedDB ---------- */
-const DB_NAME = "manabi-log", DB_VER = 2;
+const DB_NAME = "manabi-log", DB_VER = 4;
 let db;
 function openDB(){
   return new Promise((res, rej)=>{
@@ -384,6 +480,12 @@ function openDB(){
       }
       if(!d.objectStoreNames.contains("cats")){
         d.createObjectStore("cats", { keyPath:"name" });
+      }
+      if(!d.objectStoreNames.contains("tadoku")){
+        d.createObjectStore("tadoku", { keyPath:"id" });
+      }
+      if(!d.objectStoreNames.contains("cca")){
+        d.createObjectStore("cca", { keyPath:"id" });
       }
     };
     r.onsuccess = e=>{ db = e.target.result; res(); };
@@ -400,6 +502,14 @@ function delEntry(id){ return reqP(store("entries","readwrite").delete(id)); }
 function getAllCats(){ return reqP(store("cats","readonly").getAll()).then(r=>r||[]); }
 function putCat(o){ return reqP(store("cats","readwrite").put(o)); }
 function delCat(name){ return reqP(store("cats","readwrite").delete(name)); }
+
+function getAllTadoku(){ return reqP(store("tadoku","readonly").getAll()).then(r=>r||[]); }
+function putTadoku(o){ return reqP(store("tadoku","readwrite").put(o)); }
+function delTadoku(id){ return reqP(store("tadoku","readwrite").delete(id)); }
+
+function getAllCca(){ return reqP(store("cca","readonly").getAll()).then(r=>r||[]); }
+function putCca(o){ return reqP(store("cca","readwrite").put(o)); }
+function delCca(id){ return reqP(store("cca","readwrite").delete(id)); }
 
 /* ---------- 日付ユーティリティ ---------- */
 const pad = n=> String(n).padStart(2,"0");
@@ -421,6 +531,8 @@ function render(){
   renderGoal();
   renderBreakdown();
   renderEntries();
+  renderTadoku();
+  renderCca();
 }
 
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`; }
@@ -796,7 +908,9 @@ async function save(){
 
 /* ---------- バックアップ ---------- */
 function exportJSON(){
-  const data = JSON.stringify({ app:"manabi-log", version:1, exportedAt:new Date().toISOString(), entries }, null, 2);
+  const tadoku = Object.keys(tadokuChecked).map(id=>({ id, ts:tadokuChecked[id] }));
+  const cca = Object.keys(ccaDone).map(id=>({ id, ts:ccaDone[id] }));
+  const data = JSON.stringify({ app:"manabi-log", version:3, exportedAt:new Date().toISOString(), entries, tadoku, cca }, null, 2);
   const blob = new Blob([data], { type:"application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -813,12 +927,32 @@ function importJSON(ev){
       const data = JSON.parse(reader.result);
       const list = Array.isArray(data) ? data : data.entries;
       if(!Array.isArray(list)) throw new Error("形式が違います");
-      if(!confirm(`${list.length}件を読み込みます。同じIDは上書きされます。よろしいですか？`)) return;
+      const td = (!Array.isArray(data) && Array.isArray(data.tadoku)) ? data.tadoku : [];
+      const cc = (!Array.isArray(data) && Array.isArray(data.cca)) ? data.cca : [];
+      const msg = `${list.length}件を読み込みます。同じIDは上書きされます。`
+        + (td.length ? `\n多読のチェック${td.length}冊分も復元します。` : "")
+        + (cc.length ? `\nClaude Code Academyのチェック${cc.length}レッスン分も復元します。` : "")
+        + "\nよろしいですか？";
+      if(!confirm(msg)) return;
       for(const e of list){
         if(!e.id) e.id = (Date.now().toString(36)+Math.random().toString(36).slice(2,8));
         await putEntry(e);
       }
+      for(const r of td){
+        if(!r || !r.id || !tadokuBook[r.id]) continue;
+        const rec = { id:r.id, ts:r.ts || Date.now() };
+        await putTadoku(rec);
+        tadokuChecked[rec.id] = rec.ts;
+      }
+      for(const r of cc){
+        if(!r || !r.id || !ccaLesson[r.id]) continue;
+        const rec = { id:r.id, ts:r.ts || Date.now() };
+        await putCca(rec);
+        ccaDone[rec.id] = rec.ts;
+      }
       entries = await getAll();
+      buildTadokuList();
+      buildCcaList();
       render();
       toast(`${list.length}件を読み込みました`);
     }catch(err){ toast("読み込みに失敗しました"); }
@@ -1007,6 +1141,556 @@ function tSetupTimer(){
   setInterval(()=>{ if(T.running) saveT(); }, 5000);
 }
 
+/* ---------- 英語多読 100万語 ----------
+   Oxford Owl の無料eBook 159冊を、やさしい順に7ブロックへ並べたもの。
+   語数は各シリーズの既知の語数からの推定値（1冊ごとの正確な語数は非公開）。 */
+const TADOKU_GOAL = 1000000;
+const TADOKU_CAT  = "多読";
+const TADOKU_BLOCKS = [
+  { id:"A", name:"A・ひとこと絵本", per:35, color:"#7F77DD",
+    note:"1冊10〜60語。1ページに1行だけ。5冊読んでも200語に届かない。",
+    books:["Disgusting Denzil","All Aboard the Colours Train","The Haircut","Goodnight, Sleep Tight","Turbo Bunnies","Tiger's Family","Big, Bad Bug","The Dragon Balloon","Big Feet","Can You See Me?","A Dog's Day","Ant and the Baby","Jack","Quiz","Ron Rabbit's Big Day"] },
+  { id:"B", name:"B・音を作る本", per:70, color:"#993556",
+    note:"フォニックス教材。音と綴りの対応を体に入れる区間。声に出すと効く。",
+    books:["Sound Blending Book Bag Book 1","Sound Blending Book Bag Book 6","Sound Blending Book Bag Book 10","Sun hat fun","Nog in the fog","Get up!","Rag the rat","Dad, Can You Do This?","The Toys' Party","Spots!","Epic Trips","Joan and the Moon","Summer in the Arctic","Zoom Food","Leek Hotpot","Let's go!","Toads in the Road","Red Ned"] },
+  { id:"C", name:"C・話がはじまる", per:250, color:"#BA7517",
+    note:"1冊150〜400語。筋のある話になる。「読めた」という感覚が初めて来る。",
+    books:["A pet goldfish","Silver Foil Rocket","Dragon bay","Greedy Tiger","Baboons","By the Stream","The Play Park","Good Old Grandad","Dads and karts","A house fit for a mouse","A pet tortoise","Painting the Loft","No Tricks, Gran!","Fun at night","What's in the woods?","Our incredible planet","Save the whale","The Stinky Plant","Tricking a dragon","A flight to New York","The Scarf","Tom, Dad and Colin","Carrion creatures","Everyone Got Wet"] },
+  { id:"D", name:"D・一冊が10分になる", per:650, color:"#639922",
+    note:"1冊400〜900語。読了に時間がかかり出す。ER-Central の併走を始める頃。",
+    books:["Planets","Plants for Dinner","Fresh Start: Anthology 1","Fresh Start: Anthology 3","Fresh Start: Anthology 5","Green Turtles","Stuck in the Mud","Rock, Cloth or Custard?","The Beasts Have a Feast","What's that Noise?","Rowing Boats","Please Do Not Sneeze","The Orchid Thief","Beast Feasts","The Strange Beast","A Monster Mistake","Kipper and the Trolls","Beside the Banyan Tree","The Frog Prince","A Pony For a Day","Zoom Out!","Deep Down Weird","Perfect Pets","Who Eats Who?","Christmas Adventure","Paris Adventure","Nate's New Room-Mate","The Phone Puzzle"] },
+  { id:"E", name:"E・谷の入口", per:1300, color:"#D85A30",
+    note:"1冊900〜1,800語。絵の助けが減り、文字が主役になる。ここが一番きつい。",
+    books:["Animal Magic","Rumpelstiltskin","Our Class Tiger","The Big Breakfast","Red Planet","Escape of the Giant Chicken","Dinosaur Safari","Finn MacCool and the Giant's Causeway","Flood!","What Was It Like?","Oh, Otto!","Superhero Plants","Esam's Eid","The Destroyer","East of the Sun, West of the Moon","Key Trouble","The Flying Machine","The Lazy Giant","Planet Mouse","Deserts of Africa","Save the World!","Swamp Crash","Tom Thumb and the Football Team","Downhill Racers","Cornflake Coin","Space Hunt","Return to Exis","The Deadly Cave","Dick Whittington","Animal Tricksters"] },
+  { id:"F", name:"F・章立ての本", per:2800, color:"#0F6E56",
+    note:"1冊2,000〜5,000語。数日かけて1冊でいい。ここを抜けると無料の古典が全部読める。",
+    books:["Doohickey and the Robot","Cool Clive","Fables from Africa","Rollo's Choice","The Rust Monster","The Personality Potion","How the World Began","Granphibian and the Blobbermucky","Journey to Mars","Tales of the Underworld","Grace the Pirate","Sherlock Holmes","Double Exposure","Air Raid!","Big Game Adventure","Dragon Tales","White Fang","Planet Action","Exploring the Deep","Mythical Beasts and Fabulous Monsters","The Secret Garden","Family Matters: Best Shot","Claudia Jones: Change-Maker","Ultimate Takeover","Storm Chasers","The Rise of the Empty People","So You Want to Build a Castle","Selkie Summer","Time Runs Out"] },
+  { id:"G", name:"G・レベル混在（後回し）", per:800, color:"#185FA5",
+    note:"ライブラリ冒頭の新着枠。やさしいものと難しいものが混ざるので最後に拾う。",
+    books:["Winnie and Wilbur Stay at Home","Marv and the Mega Robot","Isadora Moon Goes to School","Floppy Did This!","Kitty and the Moonlight Rescue","Ron Rabbit's Big Day（抜粋版）","Noah's Seal","Hairy-Scary Monster","Big Words for Little People: Friendship","The Frog Prince（Other Tales より）","Winnie and Wilbur at the Seaside","Colour Codes","Pippi Longstocking","Winnie's Bubble Trouble","Steve, Terror of the Seas"] }
+];
+const TADOKU_ROAD = [
+  { name:"音に慣れる", range:"0 → 2,000語",      to:2000,    what:"ブロックA・B。意味を取らず、絵と音だけ追う。" },
+  { name:"絵で読む",   range:"→ 8,000語",        to:8000,    what:"ブロックC。分からない語は飛ばす。StoryWeaver も混ぜる。" },
+  { name:"話を読む",   range:"→ 30,000語",       to:30000,   what:"ブロックD。ER-Central に登録して併走を始める。" },
+  { name:"谷を越える", range:"→ 100,000語",      to:100000,  what:"ブロックE・F。きつければCに戻ってよい。戻るのは後退ではない。" },
+  { name:"巡航",       range:"→ 300,000語",      to:300000,  what:"ER-Central が主食。Breaking News English を1日1本。" },
+  { name:"加速",       range:"→ 600,000語",      to:600000,  what:"Breaking News English を上のレベルへ。Lit2Go の朗読つき古典。" },
+  { name:"完走",       range:"→ 1,000,000語",    to:1000000, what:"Project Gutenberg を辞書なしで。教材はもう要らない。" }
+];
+
+let tadokuChecked = {};   // "A:0" -> チェックした時刻(ms)
+const tadokuBook = {};    // "A:0" -> { title, per }
+TADOKU_BLOCKS.forEach(b=> b.books.forEach((t,i)=>{ tadokuBook[b.id+":"+i] = { title:t, per:b.per }; }));
+const TADOKU_TOTAL_BOOKS = Object.keys(tadokuBook).length;
+
+function tadokuWords(){
+  let w = 0;
+  for(const k in tadokuChecked){ if(tadokuBook[k]) w += tadokuBook[k].per; }
+  return w;
+}
+function tadokuTodayKeys(){
+  const t = ymd(new Date());
+  return Object.keys(tadokuChecked).filter(k=> tadokuBook[k] && ymd(new Date(tadokuChecked[k]))===t );
+}
+
+function buildTadokuList(){
+  const host = document.getElementById("tdBlocks");
+  if(!host) return;
+  host.innerHTML = "";
+  TADOKU_BLOCKS.forEach(b=>{
+    const det = document.createElement("details");
+    det.className = "td-block";
+    det.style.setProperty("--bc", b.color);
+    const sum = document.createElement("summary");
+    sum.innerHTML = `<span></span><span class="td-bmeta">${b.books.length}冊・1冊約${b.per.toLocaleString("ja-JP")}語</span>`;
+    sum.firstChild.textContent = b.name;
+    const note = document.createElement("div");
+    note.className = "td-note";
+    note.textContent = b.note;
+    const list = document.createElement("div");
+    list.className = "td-list";
+    b.books.forEach((title,i)=>{
+      const key = b.id+":"+i;
+      const lab = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.dataset.key = key; cb.checked = !!tadokuChecked[key];
+      const sp = document.createElement("span");
+      sp.textContent = title;
+      lab.appendChild(cb); lab.appendChild(sp);
+      list.appendChild(lab);
+    });
+    det.appendChild(sum); det.appendChild(note); det.appendChild(list);
+    host.appendChild(det);
+  });
+}
+
+function buildTadokuRoad(){
+  const host = document.getElementById("tdRoad");
+  if(!host) return;
+  const w = tadokuWords();
+  host.innerHTML = "";
+  let marked = false;
+  TADOKU_ROAD.forEach(p=>{
+    const cur = !marked && w < p.to;
+    if(cur) marked = true;
+    const el = document.createElement("div");
+    el.className = "td-phase" + (cur ? " on" : "");
+    el.innerHTML = `<span class="p1"></span><span class="p2"></span><span class="p3"></span>`;
+    el.querySelector(".p1").textContent = p.name;
+    el.querySelector(".p2").textContent = p.range;
+    el.querySelector(".p3").textContent = p.what;
+    host.appendChild(el);
+  });
+}
+
+function renderTadoku(){
+  const wEl = document.getElementById("tdWords");
+  if(!wEl) return;
+  const w = tadokuWords();
+  const n = Object.keys(tadokuChecked).filter(k=>tadokuBook[k]).length;
+  wEl.textContent = w.toLocaleString("ja-JP");
+  document.getElementById("tdBooks").textContent = `${n} / ${TADOKU_TOTAL_BOOKS}冊`;
+  document.getElementById("tdFill").style.width = Math.min(100, w/TADOKU_GOAL*100).toFixed(2)+"%";
+
+  let msg;
+  if(n===0) msg = "ブロックAの1冊目から。5冊読んでも5分で終わります。";
+  else if(w<2000)   msg = "音に慣れる段階。意味は取らなくていい。";
+  else if(w<8000)   msg = "絵で読む段階。分からない語は飛ばす。";
+  else if(w<30000)  msg = "話を読む段階。ER-Central に登録する頃。";
+  else if(w<100000) msg = "谷を越える段階。きつければブロックCに戻ってよい。";
+  else if(n<TADOKU_TOTAL_BOOKS) msg = "10万語を突破。読み切ったら ER-Central へ。";
+  else msg = "159冊 完走。ここから先は ER-Central と Breaking News English で30万語へ。";
+  document.getElementById("tdStage").textContent = msg;
+
+  const today = tadokuTodayKeys();
+  const tw = today.reduce((s,k)=> s + tadokuBook[k].per, 0);
+  document.getElementById("tdToday").textContent =
+    today.length ? `今日チェックした本：${today.length}冊・約${tw.toLocaleString("ja-JP")}語` : "";
+
+  buildTadokuRoad();
+}
+
+async function ensureTadokuCat(){
+  if(categories.find(c=>c.name===TADOKU_CAT)) return;
+  const cat = { name:TADOKU_CAT, color:nextColor(), order:categories.length };
+  await putCat(cat);
+  categories.push(cat);
+  buildChips();
+}
+
+async function tadokuReflect(){
+  const keys = tadokuTodayKeys();
+  if(keys.length===0){ toast("今日チェックした本がありません"); return; }
+  const words = keys.reduce((s,k)=> s + tadokuBook[k].per, 0);
+  await ensureTadokuCat();
+  selCat = TADOKU_CAT;
+  buildChips();
+  document.getElementById("title").value = `多読 ${keys.length}冊（約${words.toLocaleString("ja-JP")}語）`;
+  const memo = document.getElementById("memo");
+  const titles = keys.map(k=>tadokuBook[k].title).join("、");
+  memo.value = memo.value ? memo.value + "\n" + titles : titles;
+  const more = document.getElementById("more");
+  if(!more.classList.contains("open")){
+    more.classList.add("open");
+    document.getElementById("moreToggle").textContent = "－ 閉じる";
+  }
+  const minsInput = document.getElementById("mins");
+  minsInput.scrollIntoView({ behavior:"smooth", block:"center" });
+  setTimeout(()=>minsInput.focus(), 300);
+  toast(`今日の${keys.length}冊をフォームに入れました ⬇ 分数を入れて記録`);
+}
+
+function setupTadoku(){
+  const host = document.getElementById("tdBlocks");
+  if(!host) return;
+  host.addEventListener("change", async e=>{
+    const cb = e.target;
+    if(!cb || cb.type!=="checkbox") return;
+    const key = cb.dataset.key;
+    if(cb.checked){
+      const ts = Date.now();
+      tadokuChecked[key] = ts;
+      await putTadoku({ id:key, ts });
+    }else{
+      delete tadokuChecked[key];
+      await delTadoku(key);
+    }
+    renderTadoku();
+  });
+  document.getElementById("tdReflect").onclick = tadokuReflect;
+}
+
+/* ---------- Claude Code Academy ----------
+   claude-code-academy.dev の6コース・全レッスン（2026-08-11時点）。
+   動画の長さがそのまま学習時間になるので、記録に反映すると分数まで自動で入る。 */
+const CCA_CAT = "Claude Code";
+const CCA = [
+  { id:"c1", name:"はじめてのClaude Code入門", color:"#534AB7",
+    url:"https://claude-code-academy.dev/courses/d36fec00-afc6-4fbe-8f87-779b3ff1e750",
+    secs:[
+      ["Claude Code入門", [
+        ["本講座で学べる事","1:26"],["Claude Codeとは","3:45"],
+        ["【補足】ClaudeデスクトップアプリでClaude Codeを使ってみよう","10:21"],
+        ["Cursorのインストール","5:38"],["Node.jsのインストール","3:53"],
+        ["Claude Codeのインストール","3:25"],
+        ["【補足】PC標準搭載のターミナルとccmuxでClaude Codeを動かすには","6:18"]]],
+      ["Claude Codeの基礎的な使い方", [
+        ["基礎的なLinuxコマンドを3つ覚えよう","3:31"],
+        ["Claude Codeでポートフォリオサイトを作ってみよう","7:11"],
+        ["基礎スラッシュコマンド(/clear, /compact, /context)","3:34"],
+        ["基礎スラッシュコマンド(/usage, /model, /resume)","5:05"],
+        ["基礎CLIコマンド(--continue, --dangerously-skip-permissions, --mcp-config)","4:29"],
+        ["Claude Code CLIのエイリアス設定を使用","3:48"]]],
+      ["Claude CodeでWebアプリケーション開発を始めよう", [
+        ["Webアプリケーション開発で必要な知識を理解しよう","5:45"],
+        ["Webアプリケーション開発用のフォルダを作成しよう","2:34"],
+        ["Planモードで要件を伝えよう","8:37"],
+        ["生成AIアプリの実装状態と動作テストしよう","3:47"],
+        ["Gemini API Keyを用意しよう","6:29"],
+        ["frontend-design Skillsを使ってみよう","7:21"],
+        ["Githubアカウントを作成しよう","3:10"],
+        ["Github CLIのインストールとGithub認証しよう","4:14"],
+        ["Gitのインストールとリポジトリ作成とアップロードしよう","4:53"],
+        ["Githubリポジトリとセキュリティのお話","4:37"],
+        ["Vercelへデプロイ(公開)しよう","7:19"]]],
+      ["Claude Codeの発展的な理解と使い方", [
+        ["コンテキストエンジニアリングを理解しよう","8:24"],
+        ["コンテキストとセッションの関係を理解しよう","5:43"],
+        ["/branch(fork)の意味と使いどころ","8:03"],
+        ["サブエージェントの役割とコンテキストの分離","3:09"],
+        ["サブエージェントを作って動かしてみよう","7:54"],
+        ["MCPを理解しよう","5:24"],
+        ["Playwright MCPサーバーを連携して使ってみよう","8:30"]]],
+      ["便利なClaude Code Tips", [
+        ["/remote-contorlで遠隔でClaude Codeを動かしてみよう","3:52"],
+        ["/statuslineでClaude Code使用量を常時CLIに表示してみよう","4:05"]]]
+    ]},
+  { id:"c2", name:"業務・副業自動化のためのClaude Code Skills入門", color:"#1D9E75",
+    url:"https://claude-code-academy.dev/courses/3c9c6a32-88fb-45d1-bf2d-404489a95033",
+    secs:[
+      ["【業務自動化】Claude Code Skills入門", [
+        ["本講座で学べる事","2:04"],
+        ["Claude Code Skillsの基礎概念を理解しよう","8:40"],
+        ["cc-companyで業務自動化のセットアップをしよう","4:13"]]],
+      ["【実践①】日常の簡単な業務を自動化してみよう", [
+        ["自動化①：リサーチ業務の自動化","7:22"],
+        ["自動化②：請求書PDF作成の自動化","3:56"],
+        ["自動化③：PowerPointスライド作成の自動化","5:53"]]],
+      ["【実践②】Xの自動運用に挑戦しよう", [
+        ["X運用を自動化するためのワークフローを考えよう","10:23"],
+        ["X DeveloperでAPIキー発行とMCPサーバーを準備しよう","7:19"],
+        ["X MCP Server × SkillsでXのポスト投稿してみよう","5:32"],
+        ["Claude Code RoutinesでリモートでClaude Codeを実行させよう","6:21"],
+        ["Github Actionsと連携してXを完全自動運用してみよう","8:50"],
+        ["仮想組織の整理とサブエージェント化","8:37"]]],
+      ["【実践③】動画編集の自動化を公開Skillsを利用して挑戦しよう", [
+        ["/video-use Skillsをインストールしてみよう","4:34"],
+        ["Claude Codeに動画の無音カット編集させよう","4:33"],
+        ["Elevenlabsを使って言い直しカット編集させよう","6:46"],
+        ["動画編集ワークフローの確認とSkillsの作成","5:24"],
+        ["Claude Codeで動画編集チームとサブエージェントの作成","2:37"],
+        ["動画字幕テロップを自動で挿入してみよう","5:00"]]],
+      ["おわりに", [["本講座の仮想会社経営チームの組織図を見てみよう","6:45"]]]
+    ]},
+  { id:"c3", name:"Claude Codeハーネス設計と開発実践", color:"#185FA5",
+    url:"https://claude-code-academy.dev/courses/64c04d33-8375-4d66-8f2c-1b85c13287ae",
+    secs:[
+      ["Claude Codeハーネス設計入門", [
+        ["本講座で学べる事","1:34"],["図解で理解するハーネス設計の基本","9:10"]]],
+      ["ハーネスで動画講座プラットフォームの自律開発", [
+        ["【補足】Claude Codeのアップデート方法と/effort","2:55"],
+        ["Planner/Generator/Evaluatorのハーネスを作ろう","10:27"],
+        ["動画講座プラットフォームの技術スタックとアーキテクチャ","10:03"],
+        ["Plan ModeとPlannerエージェントで仕様を固めよう","9:49"],
+        ["getDesign.mdとワイヤーフレームでデザイン仕様書を固めよう","6:25"],
+        ["Turso/Playwright MCPサーバーを用意しておこう","9:10"],
+        ["ハーネスで完全自律開発をはじめよう","8:51"]]],
+      ["Claude Code×人間のレビューと微修正", [
+        ["アプリの動作確認とTruso MCPの再接続","5:28"],
+        ["Google Cloud PlatformでGoogle認証の設定をしよう","7:39"],
+        ["アプリ管理者を設定して管理画面の動作確認をしよう","3:56"],
+        ["アプリのワイヤフレーム画像をClaude Codeに参照させよう","3:34"],
+        ["Stripeアカウントの作成とStripe MCPサーバーの設定","5:29"],
+        ["Stripe MCPを使って課金商品を作成しよう","4:10"],
+        ["Stripe CLIのインストールしてWebhook設定をしてみよう","9:25"],
+        ["【補足①】Stripe決済のワークフローをシーケンス図で理解しよう","10:25"],
+        ["【補足②】Webhookの役割と購入後のアクセスフロー","5:16"],
+        ["bunny.netで動画ストレージの設定をしよう","10:19"],
+        ["bunny.netで画像ストレージの設定をしよう","7:27"]]],
+      ["デプロイ(公開)準備をはじめよう", [
+        ["Webアプリケーションをデプロイ(公開)するとは？","6:01"],
+        ["/vercel-react-best-practicesでWebアプリの最適化","6:38"],
+        ["公開前のアプリの簡易的なセキュリティチェック","5:26"],
+        ["Githubリポジトリの作成と機密情報の取り扱い","4:22"],
+        ["APIキーのローテーションとMCPサーバーの取り扱い","6:04"]]],
+      ["Webアプリケーションをデプロイしよう", [
+        ["VercelへNext.jsアプリをデプロイしよう","3:26"],
+        ["Google認証を本番環境へ対応させよう","4:16"],
+        ["Stripe決済を本番環境で動かすためには","7:11"],
+        ["Stripe商品の本番環境への移動とWebhook設定","6:51"],
+        ["デプロイ後に追加してほしい機能・サービスの紹介","8:53"],
+        ["アプリ公開後のアップデートとGitブランチ運用方法","6:42"],
+        ["おわりに","3:47"]]]
+    ]},
+  { id:"c4", name:"Claude Codeセキュリティ入門", color:"#993556",
+    url:"https://claude-code-academy.dev/courses/e6bd8146-b0f2-4596-86e2-8796e9fcd898",
+    secs:[
+      ["Claude Codeセキュリティ入門", [
+        ["本講座で学べる事","0:58"],
+        ["「セキュリティに強い」とはそもそも何か？","5:17"],
+        ["【復習】Claude Codeの仕組みを理解しよう","2:46"],
+        ["Claude Codeで発生する脆弱性ポイント","4:02"],
+        ["Claude Codeパーミッション設定しよう","5:59"],
+        ["パーミッションモード選択とプロンプトインジェクション","6:53"],
+        ["【訂正】.claudeignoreというファイルは存在しない","5:39"],
+        ["/sandboxでサンドボックス環境でClaude Codeを動かそう","6:40"],
+        ["安全にMCPサーバーを取り扱う方法","9:08"]]],
+      ["アプリケーション開発における脆弱性リスク", [
+        ["フロントエンドにおける脆弱性の例","5:10"],
+        ["バックエンドにおける脆弱性の例","10:17"],
+        ["【注意】Supabaseを使った際の脆弱性","6:49"],
+        ["ハッキング①：大事なAPIキーを盗んでみよう","8:32"],
+        ["ハッキング②：RLS未設定のアプリにデータアクセスしてみよう","6:24"],
+        ["ハッキング③：認可チェック不備のAPIを使った攻撃(IDOR)","7:41"],
+        ["機密情報はGithubリポジトリにアップロードしないように注意しよう","4:11"],
+        ["おわりに","3:41"]]]
+    ]},
+  { id:"c5", name:"Claude Code iOS開発実践", color:"#BA7517",
+    url:"https://claude-code-academy.dev/courses/d849c5bf-2eea-4bf2-80ea-429699186fec",
+    secs:[
+      ["Claude Code iOS開発入門", [
+        ["本講座で学べる事","2:24"],
+        ["【成功事例】サブスクBoxの紹介","6:48"],
+        ["アプリの0→1を達成するアイデアの考え方","3:19"],
+        ["Claude Code1人スタートアップのワークフロー","7:25"]]],
+      ["【企画/設計フェーズ】Claude Code × ExpoでiOS開発しよう", [
+        ["ClaudeやGPT5.5で要件定義から始めよう","6:24"],
+        ["アプリの技術スタックを考えよう","6:33"],
+        ["GPT image 2でアプリのモック画像を作ろう","7:18"],
+        ["Claude Designで需要検証のLPを作ろう","4:04"],
+        ["FormSpreeでウェイトリスト機能を実装しよう","2:00"],
+        ["Netlify DropでLP公開してSNSで告知しよう","3:43"],
+        ["【補足】Xで需要チェックした結果","3:39"]]],
+      ["【実装フェーズ】Claude Code × ExpoでiOS開発しよう", [
+        ["Claude Designでアプリのデザインモックを作ろう","5:06"],
+        ["【補足】Claude Fable 5を使った場合のデザインモック","3:01"],
+        ["プロジェクトの作成とハーネス構築しよう","4:44"],
+        ["Claude Designで作ったモックをClaude Codeで再現しよう","6:37"],
+        ["要件定義を渡してアプリを自律開発をはじめよう","3:20"],
+        ["Convexの準備とSprint2以降の自律開発","2:57"],
+        ["動作テストとConvex Authへの移行","5:13"],
+        ["Cloudflare R2の準備をしよう","7:02"],
+        ["UI/UXの磨き込みをやってみよう","6:36"],
+        ["RevenueCat MCPで課金を導入しよう","5:55"],
+        ["PostHogで分析機能を導入しよう","5:57"],
+        ["その他：MVPリリース前におすすめする機能","5:22"]]],
+      ["【リリース審査フェーズ】Claude Code × ExpoでiOS開発しよう", [
+        ["Apple Developer ProgramとApple Store Connect","6:14"],
+        ["EAS BuildとSubmitを実行しよう","5:58"],
+        ["TestFlightで実機テストしよう","8:48"],
+        ["Apple Store Connect MCPを接続してみよう","7:41"],
+        ["審査に必要な情報をAIに入力してもらおう","5:55"],
+        [".p8ファイルをRevenucatにアップロードしよう","3:55"],
+        ["【最終確認】TestFlightで課金のテストをしよう","4:46"],
+        ["GPT image 2でスクリーンショットプレビューを作成しよう","4:56"],
+        ["Canvaのマジックレイヤーを使って画像修正しよう","4:54"],
+        ["開発したiOSアプリを審査に提出しよう🎉",""]]]
+    ]},
+  { id:"c6", name:"Claude Code個人開発スタートアップの教科書", color:"#639922",
+    url:"https://claude-code-academy.dev/courses/18a10c79-e6e3-4b8c-b0a8-939033529b6e",
+    secs:[
+      ["はじめに", [
+        ["本講座で学べる事","1:18"],
+        ["Claude Code×個人開発で成果が出るロードマップ","8:49"]]],
+      ["SHINCODEが個人開発したSNSの実例で解説", [
+        ["ぬい活専用SNS「ぬい日和」の紹介と実績","3:55"],
+        ["ステップ①：アイデア・企画","5:16"],
+        ["ステップ②：要件定義・LP作成","4:27"],
+        ["ステップ③：広告で需要検証","7:14"],
+        ["ステップ④：CPA計算",""],
+        ["ステップ⑤：Claude CodeでMVP開発",""],
+        ["ステップ⑥：SNS運用",""],
+        ["ステップ⑦：MVPリリース",""],
+        ["ステップ⑧：分析",""],
+        ["ステップ⑨：改善",""],
+        ["ステップ⑩：PMF達成",""],
+        ["ステップ⑪：ユニットエコノミクスの最適化",""],
+        ["ステップ⑫：スケール",""],
+        ["ステップ⑬：個人開発スタートアップから事業経営へ",""]]]
+    ]}
+];
+
+let ccaDone = {};        // "c1:5" -> チェックした時刻(ms)
+const ccaLesson = {};    // "c1:5" -> { title, sec, sacs(秒), course }
+function ccaSecs(str){
+  if(!str) return 0;
+  const p = String(str).split(":");
+  return (parseInt(p[0],10)||0)*60 + (parseInt(p[1],10)||0);
+}
+CCA.forEach(c=>{
+  let n = 0;
+  c.secs.forEach(([secName, list])=>{
+    list.forEach(([title, dur])=>{
+      n++;
+      ccaLesson[c.id+":"+n] = { title, sec:secName, s:ccaSecs(dur), course:c.id, no:n };
+    });
+  });
+  c.count = n;
+  c.totalS = Object.keys(ccaLesson).filter(k=>k.startsWith(c.id+":")).reduce((s,k)=>s+ccaLesson[k].s,0);
+});
+const CCA_TOTAL_LESSONS = Object.keys(ccaLesson).length;
+const CCA_TOTAL_S = Object.keys(ccaLesson).reduce((s,k)=>s+ccaLesson[k].s,0);
+
+function ccaSeconds(){
+  let s = 0;
+  for(const k in ccaDone){ if(ccaLesson[k]) s += ccaLesson[k].s; }
+  return s;
+}
+function ccaTodayKeys(){
+  const t = ymd(new Date());
+  return Object.keys(ccaDone).filter(k=> ccaLesson[k] && ymd(new Date(ccaDone[k]))===t );
+}
+
+function buildCcaList(){
+  const host = document.getElementById("ccaList");
+  if(!host) return;
+  host.innerHTML = "";
+  CCA.forEach(c=>{
+    const det = document.createElement("details");
+    det.className = "td-block";
+    det.style.setProperty("--bc", c.color);
+    const sum = document.createElement("summary");
+    sum.innerHTML = `<span></span><span class="td-bmeta">${c.count}レッスン・${Math.round(c.totalS/60)}分</span>`;
+    sum.firstChild.textContent = c.name;
+    det.appendChild(sum);
+    const link = document.createElement("div");
+    link.className = "td-note";
+    link.innerHTML = `<a href="${c.url}" target="_blank" rel="noopener">この講座を開く</a>`;
+    det.appendChild(link);
+    let n = 0;
+    c.secs.forEach(([secName, list])=>{
+      const h = document.createElement("div");
+      h.className = "td-note";
+      h.style.fontWeight = "600";
+      h.style.color = "var(--text)";
+      h.textContent = secName;
+      det.appendChild(h);
+      const box = document.createElement("div");
+      box.className = "td-list";
+      list.forEach(([title, dur])=>{
+        n++;
+        const key = c.id+":"+n;
+        const lab = document.createElement("label");
+        const cb = document.createElement("input");
+        cb.type = "checkbox"; cb.dataset.key = key; cb.checked = !!ccaDone[key];
+        const sp = document.createElement("span");
+        sp.textContent = dur ? `${n}. ${title}（${dur}）` : `${n}. ${title}（準備中）`;
+        lab.appendChild(cb); lab.appendChild(sp);
+        box.appendChild(lab);
+      });
+      det.appendChild(box);
+    });
+    host.appendChild(det);
+  });
+}
+
+function buildCcaCourses(){
+  const host = document.getElementById("ccaCourses");
+  if(!host) return;
+  host.innerHTML = "";
+  CCA.forEach(c=>{
+    const done = Object.keys(ccaDone).filter(k=>ccaLesson[k] && ccaLesson[k].course===c.id).length;
+    const pct = c.count ? Math.round(done/c.count*100) : 0;
+    const el = document.createElement("div");
+    el.className = "brk-row";
+    el.innerHTML = `<span class="brk-name" style="width:auto; flex:1;"></span>
+      <div class="brk-track" style="flex:none; width:34%;"><div class="brk-fill" style="width:${pct}%; background:${c.color}"></div></div>
+      <span class="brk-val">${done}/${c.count}</span>`;
+    el.querySelector(".brk-name").textContent = c.name;
+    host.appendChild(el);
+  });
+}
+
+function renderCca(){
+  const el = document.getElementById("ccaMin");
+  if(!el) return;
+  const s = ccaSeconds();
+  const n = Object.keys(ccaDone).filter(k=>ccaLesson[k]).length;
+  el.textContent = Math.round(s/60).toLocaleString("ja-JP");
+  document.getElementById("ccaTotalMin").textContent = Math.round(CCA_TOTAL_S/60).toLocaleString("ja-JP");
+  document.getElementById("ccaCount").textContent = `${n} / ${CCA_TOTAL_LESSONS}レッスン`;
+  document.getElementById("ccaFill").style.width = (n/CCA_TOTAL_LESSONS*100).toFixed(1)+"%";
+
+  let msg;
+  if(n===0) msg = "「はじめてのClaude Code入門」の1本目から。最初の2本は無料で見られます。";
+  else if(n>=CCA_TOTAL_LESSONS) msg = "全レッスン完了。あとは自分の手を動かす番です。";
+  else{
+    const cur = CCA.find(c=> Object.keys(ccaDone).filter(k=>ccaLesson[k]&&ccaLesson[k].course===c.id).length < c.count );
+    const doneCur = cur ? Object.keys(ccaDone).filter(k=>ccaLesson[k]&&ccaLesson[k].course===cur.id).length : 0;
+    msg = cur ? `いま「${cur.name}」を受講中（${doneCur}/${cur.count}）。` : "";
+  }
+  document.getElementById("ccaStage").textContent = msg;
+
+  const today = ccaTodayKeys();
+  const ts = today.reduce((a,k)=>a+ccaLesson[k].s, 0);
+  document.getElementById("ccaToday").textContent =
+    today.length ? `今日チェックしたレッスン：${today.length}本・${Math.round(ts/60)}分` : "";
+
+  buildCcaCourses();
+}
+
+async function ensureCcaCat(){
+  if(categories.find(c=>c.name===CCA_CAT)) return;
+  const cat = { name:CCA_CAT, color:nextColor(), order:categories.length };
+  await putCat(cat);
+  categories.push(cat);
+  buildChips();
+}
+
+async function ccaReflect(){
+  const keys = ccaTodayKeys();
+  if(keys.length===0){ toast("今日チェックしたレッスンがありません"); return; }
+  const mins = Math.round(keys.reduce((a,k)=>a+ccaLesson[k].s,0)/60);
+  await ensureCcaCat();
+  selCat = CCA_CAT;
+  buildChips();
+  document.getElementById("title").value = `Claude Code Academy ${keys.length}レッスン`;
+  document.getElementById("mins").value = mins;
+  document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
+  const memo = document.getElementById("memo");
+  const titles = keys.map(k=>ccaLesson[k].title).join("、");
+  memo.value = memo.value ? memo.value + "\n" + titles : titles;
+  const more = document.getElementById("more");
+  if(!more.classList.contains("open")){
+    more.classList.add("open");
+    document.getElementById("moreToggle").textContent = "－ 閉じる";
+  }
+  const titleEl = document.getElementById("title");
+  titleEl.scrollIntoView({ behavior:"smooth", block:"center" });
+  toast(`今日の${keys.length}レッスン・${mins}分を入れました ⬇`);
+}
+
+function setupCca(){
+  const host = document.getElementById("ccaList");
+  if(!host) return;
+  host.addEventListener("change", async e=>{
+    const cb = e.target;
+    if(!cb || cb.type!=="checkbox") return;
+    const key = cb.dataset.key;
+    if(cb.checked){
+      const ts = Date.now();
+      ccaDone[key] = ts;
+      await putCca({ id:key, ts });
+    }else{
+      delete ccaDone[key];
+      await delCca(key);
+    }
+    renderCca();
+  });
+  document.getElementById("ccaReflect").onclick = ccaReflect;
+}
+
 /* ---------- 起動 ---------- */
 (async function init(){
   document.getElementById("today").textContent = todayStr();
@@ -1022,12 +1706,18 @@ function tSetupTimer(){
     }
     categories.sort((a,b)=>(a.order||0)-(b.order||0));
     entries = await getAll();
+    (await getAllTadoku()).forEach(r=>{ tadokuChecked[r.id] = r.ts; });
+    (await getAllCca()).forEach(r=>{ ccaDone[r.id] = r.ts; });
   }catch(err){
     categories = DEFAULT_CATEGORIES.slice();
     toast("データベースを開けませんでした");
   }
   selCat = categories[0] ? categories[0].name : "";
   buildChips();
+  buildTadokuList();
+  setupTadoku();
+  buildCcaList();
+  setupCca();
   render();
   // Enterで保存（内容欄）
   document.getElementById("title").addEventListener("keydown", e=>{
