@@ -434,6 +434,32 @@
   .m-ed-bulk{margin-top:10px;}
   .m-ed-bulk>summary{font-size:12px; color:var(--accent); cursor:pointer; user-select:none; margin-bottom:6px;}
 
+/* === 動画メニュー === */
+  .hd-right{display:flex; align-items:center; gap:10px;}
+  .hd-btn{font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
+    padding:6px 12px; border-radius:999px; border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--text);}
+  .hd-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .hd-btn[aria-expanded="true"]{background:var(--accent); color:#fff; border-color:transparent;}
+  .vmenu{margin:8px 0 0; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
+    background:var(--surface); display:flex; flex-direction:column; gap:2px;}
+  .vm-row{display:flex; gap:8px; align-items:center; padding:7px 2px; border-bottom:1px solid var(--border);}
+  .vm-row:last-child{border-bottom:none;}
+  .vm-name{flex:1; min-width:0; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .vm-sub{font-size:11px; color:var(--hint); margin-top:2px;}
+  .vm-a{flex:none; font-size:12px; font-weight:600; color:var(--accent); text-decoration:none;
+    padding:5px 10px; border-radius:999px; border:1px solid var(--border-strong); white-space:nowrap;}
+  .vm-a:hover{border-color:var(--accent); background:var(--accent-soft);}
+  .vm-empty{font-size:12px; color:var(--muted); line-height:1.8;}
+
+/* === 1日分の書き出し === */
+  .dt-head{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;}
+  .dt-head input[type=date]{font-family:inherit; font-size:13px; padding:6px 9px; border-radius:8px;
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
+  #dayTextArea{width:100%; font-family:var(--num), monospace; font-size:12.5px; line-height:1.8;
+    padding:10px; border-radius:8px; border:1px solid var(--border-strong);
+    background:var(--surface-2); color:var(--text); resize:vertical;}
+
 /* === タブ切替 === */
   .tabs{position:sticky; top:0; z-index:40; display:flex; gap:6px; overflow-x:auto;
     padding:9px 0 10px; margin-bottom:2px; background:var(--bg);
@@ -768,8 +794,12 @@
       <div class="date" id="today"></div>
     </div>
   </div>
-  <div class="streak" id="streak"><span>🔥</span><span id="streakN">0日連続</span></div>
+  <div class="hd-right">
+    <button type="button" class="hd-btn" id="videoBtn" aria-expanded="false">▶ 動画</button>
+    <div class="streak" id="streak"><span>🔥</span><span id="streakN">0日連続</span></div>
+  </div>
 </header>
+<div class="vmenu" id="videoMenu" hidden></div>
 <nav class="tabs" id="tabs" aria-label="表示切替"></nav>
 
 
@@ -889,7 +919,22 @@
 </section>
 
 <section data-tab="きろく">
-  <div class="card-title" style="padding:0 2px;"><span>最近の記録</span><span id="totalRec" style="font-size:12px;"></span></div>
+  <div class="card-title" style="padding:0 2px;">
+    <span>最近の記録</span>
+    <span style="display:flex; gap:12px; align-items:baseline;">
+      <span class="manage-link" id="dayTextLink">📋 1日分を書き出す</span>
+      <span id="totalRec" style="font-size:12px;"></span>
+    </span>
+  </div>
+  <div class="card" id="dayTextBox" style="display:none;">
+    <div class="dt-head">
+      <input type="date" id="dayTextDate">
+      <button type="button" class="btn ghost sm" id="dayTextCopy">コピー</button>
+      <button type="button" class="btn ghost sm" id="dayTextSave">.txtで保存</button>
+    </div>
+    <textarea id="dayTextArea" rows="12" spellcheck="false"></textarea>
+    <div class="m-ed-hint">ブログに貼れる形にしてあります。この欄で直接直してからコピーもできます。</div>
+  </div>
   <div id="entries"></div>
 </section>
 
@@ -2513,6 +2558,138 @@ async function openStoredPdf(fileId){
 }
 const fmtSize = b=> b >= 1048576 ? (b/1048576).toFixed(1)+"MB" : Math.round(b/1024)+"KB";
 
+/* ---------- 動画メニュー（登録した再生リスト・次の1本へすぐ飛ぶ） ---------- */
+function buildVideoMenu(){
+  const host = document.getElementById("videoMenu");
+  if(!host) return;
+  host.innerHTML = "";
+  let n = 0;
+  materials.forEach(m=>{
+    // 次に見る1本（未チェックで動画IDを持つ最初の項目）
+    let next = null;
+    for(const g of (m.groups||[])){
+      for(const it of (g.items||[])){
+        if(!mchecked[ckey(m.id, it.k)] && (it.vid || (m.listId && it.fromList))){ next = { g, it }; break; }
+      }
+      if(next) break;
+    }
+    if(!m.listId && !next) return;
+    n++;
+    const row = el("div", "vm-row");
+    const nameBox = el("div");
+    nameBox.style.cssText = "flex:1; min-width:0;";
+    nameBox.appendChild(el("div", "vm-name", m.name));
+    const done = mDone(m).length, total = mTotal(m);
+    nameBox.appendChild(el("div", "vm-sub",
+      next ? `次は「${next.it.title}」（${done}/${total}）` : `${done}/${total} 済み`));
+    row.appendChild(nameBox);
+
+    if(next && next.it.vid){
+      const a = el("a", "vm-a", "▶ 次の1本");
+      a.href = `https://www.youtube.com/watch?v=${next.it.vid}` + (m.listId ? `&list=${m.listId}` : "");
+      a.target = "_blank"; a.rel = "noopener";
+      row.appendChild(a);
+    }
+    if(m.listId){
+      const a = el("a", "vm-a", "再生リスト");
+      a.href = playlistUrl(m.listId);
+      a.target = "_blank"; a.rel = "noopener";
+      row.appendChild(a);
+    }
+    host.appendChild(row);
+  });
+  if(n === 0){
+    host.appendChild(el("div", "vm-empty",
+      "動画つきの教材がまだありません。\n教材の「✎ 教材を編集」で YouTube再生リストのURL を登録すると、ここから開けるようになります。"));
+  }
+}
+function setupVideoMenu(){
+  const btn = document.getElementById("videoBtn");
+  const menu = document.getElementById("videoMenu");
+  if(!btn || !menu) return;
+  btn.onclick = ()=>{
+    const open = menu.hasAttribute("hidden");
+    if(open) buildVideoMenu();
+    menu.toggleAttribute("hidden", !open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+  };
+}
+
+/* ---------- 1日分をテキストで書き出す（ブログ転載用） ---------- */
+function dayText(dateStr){
+  const list = entries.filter(e=> e.date === dateStr )
+                      .sort((a,b)=> (a.createdAt||0) - (b.createdAt||0) );
+  const d = parseYMD(dateStr);
+  const head = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）の学習`;
+  const lines = [head, "".padEnd(head.length*2, "-").slice(0, 32), ""];
+
+  if(list.length === 0){
+    lines.push("この日の記録はありません。");
+  }else{
+    let total = 0;
+    list.forEach(e=>{
+      total += (e.mins || 0);
+      lines.push(`■ ${e.category}　${e.mins || 0}分${e.feel ? "　" + e.feel : ""}`);
+      if(e.title) lines.push(e.title);
+      if(e.memo)  lines.push(...String(e.memo).split("\n").map(s=>s.trim()).filter(Boolean));
+      lines.push("");
+    });
+    const h = Math.floor(total/60), mm = total % 60;
+    lines.push(`合計 ${h ? h + "時間" : ""}${mm}分（${list.length}件）`);
+  }
+
+  // その日にチェックした教材（記録に反映していないぶんの控え）
+  const checked = [];
+  materials.forEach(m=>{
+    mList(m).forEach(x=>{
+      const ts = mchecked[ckey(m.id, x.it.k)];
+      if(ts && ymd(new Date(ts)) === dateStr) checked.push(`${m.name}／${x.it.title}`);
+    });
+  });
+  if(checked.length){
+    lines.push("", `【この日チェックした教材】`, ...checked.map(s=> "・" + s ));
+  }
+  return lines.join("\n");
+}
+function renderDayText(){
+  const dEl = document.getElementById("dayTextDate");
+  const tEl = document.getElementById("dayTextArea");
+  if(!dEl || !tEl) return;
+  tEl.value = dayText(dEl.value || ymd(new Date()));
+}
+function setupDayText(){
+  const link = document.getElementById("dayTextLink");
+  const boxEl = document.getElementById("dayTextBox");
+  const dEl = document.getElementById("dayTextDate");
+  const tEl = document.getElementById("dayTextArea");
+  if(!link || !boxEl) return;
+  dEl.value = ymd(new Date());
+  link.onclick = ()=>{
+    const open = boxEl.style.display === "none";
+    boxEl.style.display = open ? "" : "none";
+    link.textContent = open ? "📋 書き出しを閉じる" : "📋 1日分を書き出す";
+    if(open) renderDayText();
+  };
+  dEl.onchange = renderDayText;
+  document.getElementById("dayTextCopy").onclick = async ()=>{
+    try{
+      await navigator.clipboard.writeText(tEl.value);
+      toast("コピーしました。ブログに貼れます");
+    }catch(e){
+      tEl.select(); document.execCommand("copy");
+      toast("コピーしました");
+    }
+  };
+  document.getElementById("dayTextSave").onclick = ()=>{
+    const blob = new Blob([tEl.value], { type:"text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `まなびログ-${dEl.value}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+    toast("テキストを保存しました");
+  };
+}
+
 /* ---------- 教材の編集（追加・削除） ---------- */
 const UNIT_PRESETS = [
   { unit:"分",   itemWord:"本",       hint:"動画・音声の講座向け" },
@@ -2911,6 +3088,8 @@ function setupMaterials(){
   buildChips();
   buildMaterialSections();
   setupMaterials();
+  setupVideoMenu();
+  setupDayText();
   if(window.rebuildTabs) window.rebuildTabs();
   render();
   // Enterで保存（内容欄）
