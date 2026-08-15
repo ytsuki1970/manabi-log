@@ -454,8 +454,15 @@
 
 /* === 1日分の書き出し === */
   .dt-head{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;}
-  .dt-head input[type=date]{font-family:inherit; font-size:13px; padding:6px 9px; border-radius:8px;
+  .dt-head input[type=date], .dt-head input[type=month]{font-family:inherit; font-size:13px;
+    padding:6px 9px; border-radius:8px;
     border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
+  .dt-modes{display:flex; gap:4px;}
+  .dt-mode{font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
+    padding:6px 12px; border-radius:999px; border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--muted);}
+  .dt-mode:hover{color:var(--text); border-color:var(--accent);}
+  .dt-mode.on{background:var(--accent); color:#fff; border-color:transparent;}
   #dayTextArea{width:100%; font-family:var(--num), monospace; font-size:12.5px; line-height:1.8;
     padding:10px; border-radius:8px; border:1px solid var(--border-strong);
     background:var(--surface-2); color:var(--text); resize:vertical;}
@@ -928,10 +935,16 @@
   </div>
   <div class="card" id="dayTextBox" style="display:none;">
     <div class="dt-head">
+      <span class="dt-modes" id="dayTextModes">
+        <button type="button" class="dt-mode on" data-mode="day">1日</button>
+        <button type="button" class="dt-mode" data-mode="week">1週間</button>
+        <button type="button" class="dt-mode" data-mode="month">1か月</button>
+      </span>
       <input type="date" id="dayTextDate">
       <button type="button" class="btn ghost sm" id="dayTextCopy">コピー</button>
       <button type="button" class="btn ghost sm" id="dayTextSave">.txtで保存</button>
     </div>
+    <div class="vm-sub" id="dayTextRange" style="margin:-2px 0 8px;"></div>
     <textarea id="dayTextArea" rows="12" spellcheck="false"></textarea>
     <div class="m-ed-hint">ブログに貼れる形にしてあります。この欄で直接直してからコピーもできます。</div>
   </div>
@@ -2615,30 +2628,44 @@ function setupVideoMenu(){
   };
 }
 
-/* ---------- 1日分をテキストで書き出す（ブログ転載用） ---------- */
-function dayText(dateStr){
+/* ---------- 学習内容をテキストで書き出す（ブログ転載用・1日／1週間／1か月） ---------- */
+let dtMode = "day";                       // day | week | month
+
+const fmtMD  = d=> `${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+const fmtYMD = d=> `${d.getFullYear()}年${fmtMD(d)}`;
+const addDays = (d,n)=>{ const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const fmtMins = t=>{ const h = Math.floor(t/60), m = t%60; return (h ? h+"時間" : "") + m + "分"; };
+
+/* いま選んでいる期間を {from,to,title} で返す */
+function dtRange(){
+  const v = document.getElementById("dayTextDate").value;
+  if(dtMode === "month"){
+    const [y, m] = (v || ymd(new Date()).slice(0,7)).split("-").map(Number);
+    const from = new Date(y, m-1, 1), to = new Date(y, m, 0);
+    return { from, to, title:`${y}年${m}月の学習` };
+  }
+  const base = v ? parseYMD(v) : new Date();
+  if(dtMode === "week"){
+    const back = (base.getDay() + 6) % 7;          // 月曜はじまり
+    const from = addDays(base, -back), to = addDays(from, 6);
+    return { from, to, title:`${fmtYMD(from)}〜${fmtMD(to)}の学習` };
+  }
+  return { from:base, to:base, title:`${fmtYMD(base)}の学習` };
+}
+
+/* その日の中身（記録＋チェックした教材）を行の配列で返す */
+function dayBlock(dateStr){
+  const lines = [];
   const list = entries.filter(e=> e.date === dateStr )
                       .sort((a,b)=> (a.createdAt||0) - (b.createdAt||0) );
-  const d = parseYMD(dateStr);
-  const head = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）の学習`;
-  const lines = [head, "".padEnd(head.length*2, "-").slice(0, 32), ""];
-
-  if(list.length === 0){
-    lines.push("この日の記録はありません。");
-  }else{
-    let total = 0;
-    list.forEach(e=>{
-      total += (e.mins || 0);
-      lines.push(`■ ${e.category}　${e.mins || 0}分${e.feel ? "　" + e.feel : ""}`);
-      if(e.title) lines.push(e.title);
-      if(e.memo)  lines.push(...String(e.memo).split("\n").map(s=>s.trim()).filter(Boolean));
-      lines.push("");
-    });
-    const h = Math.floor(total/60), mm = total % 60;
-    lines.push(`合計 ${h ? h + "時間" : ""}${mm}分（${list.length}件）`);
-  }
-
-  // その日にチェックした教材（記録に反映していないぶんの控え）
+  let mins = 0;
+  list.forEach(e=>{
+    mins += (e.mins || 0);
+    lines.push(`■ ${e.category}　${e.mins || 0}分${e.feel ? "　" + e.feel : ""}`);
+    if(e.title) lines.push(e.title);
+    if(e.memo)  lines.push(...String(e.memo).split("\n").map(s=>s.trim()).filter(Boolean));
+    lines.push("");
+  });
   const checked = [];
   materials.forEach(m=>{
     mList(m).forEach(x=>{
@@ -2647,16 +2674,76 @@ function dayText(dateStr){
     });
   });
   if(checked.length){
-    lines.push("", `【この日チェックした教材】`, ...checked.map(s=> "・" + s ));
+    lines.push("【チェックした教材】", ...checked.map(s=> "・" + s ), "");
   }
-  return lines.join("\n");
+  return { lines, mins, count:list.length, entries:list, has:(list.length + checked.length) > 0 };
 }
+
+function rangeText(){
+  const { from, to, title } = dtRange();
+  const out = [title, "".padEnd(32, "-"), ""];
+  let total = 0, count = 0, days = 0;
+  const byCat = {};
+  const blocks = [];
+
+  for(let d = new Date(from); d <= to; d = addDays(d, 1)){
+    const key = ymd(d);
+    const b = dayBlock(key);
+    if(!b.has) continue;
+    days++; total += b.mins; count += b.count;
+    b.entries.forEach(e=>{ byCat[e.category] = (byCat[e.category] || 0) + (e.mins || 0); });
+    blocks.push({ d:new Date(d), b });
+  }
+
+  if(!blocks.length){
+    out.push(dtMode === "day" ? "この日の記録はありません。" : "この期間の記録はありません。");
+    return out.join("\n");
+  }
+
+  blocks.forEach(({ d, b })=>{
+    if(dtMode !== "day") out.push(`── ${fmtMD(d)}`);
+    out.push(...b.lines);
+  });
+
+  if(dtMode === "day"){
+    out.push(`合計 ${fmtMins(total)}（${count}件）`);
+  }else{
+    out.push("".padEnd(32, "-"));
+    out.push(`合計 ${fmtMins(total)}（${count}件・学習した日 ${days}日）`);
+    const cats = Object.keys(byCat).sort((a,b)=> byCat[b] - byCat[a] );
+    if(cats.length) out.push("内訳　" + cats.map(c=> `${c} ${fmtMins(byCat[c])}` ).join("／"));
+  }
+  return out.join("\n");
+}
+
 function renderDayText(){
-  const dEl = document.getElementById("dayTextDate");
   const tEl = document.getElementById("dayTextArea");
-  if(!dEl || !tEl) return;
-  tEl.value = dayText(dEl.value || ymd(new Date()));
+  if(!tEl) return;
+  tEl.value = rangeText();
+  const r = document.getElementById("dayTextRange");
+  if(r){
+    const { from, to } = dtRange();
+    r.textContent = dtMode === "day" ? "" : `${ymd(from)} 〜 ${ymd(to)}`;
+  }
 }
+
+function dtSetMode(mode){
+  dtMode = mode;
+  const dEl = document.getElementById("dayTextDate");
+  const cur = dEl.value;
+  if(mode === "month"){
+    const base = (cur && cur.length >= 7) ? cur.slice(0,7) : ymd(new Date()).slice(0,7);
+    dEl.type = "month"; dEl.value = base;
+  }else{
+    const base = (cur && cur.length === 7) ? cur + "-01" : (cur || ymd(new Date()));
+    dEl.type = "date"; dEl.value = base;
+  }
+  document.querySelectorAll("#dayTextModes .dt-mode").forEach(b=>{
+    b.classList.toggle("on", b.dataset.mode === mode);
+  });
+  renderDayText();
+}
+
 function setupDayText(){
   const link = document.getElementById("dayTextLink");
   const boxEl = document.getElementById("dayTextBox");
@@ -2667,10 +2754,14 @@ function setupDayText(){
   link.onclick = ()=>{
     const open = boxEl.style.display === "none";
     boxEl.style.display = open ? "" : "none";
-    link.textContent = open ? "📋 書き出しを閉じる" : "📋 1日分を書き出す";
+    link.textContent = open ? "📋 書き出しを閉じる" : "📋 学習内容を書き出す";
     if(open) renderDayText();
   };
   dEl.onchange = renderDayText;
+  document.getElementById("dayTextModes").addEventListener("click", e=>{
+    const b = e.target.closest(".dt-mode");
+    if(b) dtSetMode(b.dataset.mode);
+  });
   document.getElementById("dayTextCopy").onclick = async ()=>{
     try{
       await navigator.clipboard.writeText(tEl.value);
@@ -2681,10 +2772,14 @@ function setupDayText(){
     }
   };
   document.getElementById("dayTextSave").onclick = ()=>{
+    const { from, to } = dtRange();
+    const name = dtMode === "day" ? ymd(from)
+               : dtMode === "month" ? ymd(from).slice(0,7)
+               : `${ymd(from)}_${ymd(to)}`;
     const blob = new Blob([tEl.value], { type:"text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `まなびログ-${dEl.value}.txt`;
+    a.href = url; a.download = `まなびログ-${name}.txt`;
     a.click(); URL.revokeObjectURL(url);
     toast("テキストを保存しました");
   };
