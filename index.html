@@ -356,8 +356,8 @@
   details.td>summary:hover{text-decoration:underline;}
   .td-block{margin-top:13px; border-left:3px solid var(--bc,var(--accent)); padding-left:12px;}
   .td-block>summary{
-    font-size:12.5px; font-weight:700; cursor:pointer; list-style:none; display:flex; gap:8px;
-    align-items:baseline; flex-wrap:wrap; user-select:none;
+    font-size:14.5px; font-weight:700; cursor:pointer; list-style:none; display:flex; gap:8px;
+    align-items:baseline; flex-wrap:wrap; user-select:none; letter-spacing:.01em;
   }
   .td-block>summary::-webkit-details-marker{display:none;}
   .td-block .td-bmeta{font-family:var(--num); font-size:10.5px; color:var(--hint); font-weight:400; font-variant-numeric:tabular-nums;}
@@ -365,12 +365,12 @@
   .td-note a{color:var(--accent);}
   .td-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:0 12px;}
   .td-list label{
-    display:flex; gap:8px; align-items:flex-start; font-size:12.5px; line-height:1.55;
-    padding:3px 0; cursor:pointer; color:var(--muted);
+    display:flex; gap:8px; align-items:flex-start; font-size:13.5px; line-height:1.6;
+    padding:4px 0; cursor:pointer; color:var(--text); font-weight:500;
   }
-  .td-list label:hover{color:var(--text);}
+  .td-list label:hover{color:var(--accent);}
   .td-list input{margin-top:4px; flex:none; width:15px; height:15px; accent-color:var(--accent);}
-  .td-list input:checked + span{color:var(--hint); text-decoration:line-through;}
+  .td-list input:checked + span{color:var(--hint); font-weight:400; text-decoration:line-through;}
   .td-phase{display:flex; gap:10px; font-size:11.5px; padding:8px 0; border-bottom:1px solid var(--border);}
   .td-phase:last-child{border-bottom:none;}
   .td-phase .p1{width:80px; flex:none; font-weight:700; color:var(--text);}
@@ -398,7 +398,324 @@
     box-shadow:0 10px 30px -10px rgba(0,0,0,.5);
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+/* === タブ切替 === */
+  .tabs{position:sticky; top:0; z-index:40; display:flex; gap:6px; overflow-x:auto;
+    padding:9px 0 10px; margin-bottom:2px; background:var(--bg);
+    border-bottom:1px solid var(--border); scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{flex:none; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    white-space:nowrap; padding:7px 15px; border-radius:999px;
+    border:1px solid var(--border); background:var(--surface); color:var(--muted);}
+  .tab:hover{color:var(--text); border-color:var(--accent);}
+  .tab.on{background:var(--accent); color:#fff; border-color:transparent;}
 </style>
+<!-- === パシャ暗記 統合ここから === -->
+<style>
+
+  #anki-app{
+    --paper:#F4F2EC;
+    --paper-2:#FFFFFF;
+    --ink:#262522;
+    --ink-soft:#7A766E;
+    --line:#E5E1D8;
+
+    --clay:#C2613F;     --clay-d:#A14E30;
+    --pink:#CC5B72;     --pink-d:#B0455C;
+    --teal:#3AA88F;     --teal-d:#2C8571;
+    --yellow:#D9A23B;   --yellow-d:#B6841F;
+    --sky:#4F9CD0;      --sky-d:#357AAE;
+    --grape:#8E78C9;    --grape-d:#6F5BAE;
+    --leaf:#7BA84E;     --leaf-d:#5E8836;
+    --orange:#D67A45;   --orange-d:#B85F2C;
+
+    --primary:var(--clay);
+    --primary-d:var(--clay-d);
+
+    --shadow:0 1px 2px rgba(40,37,33,.05), 0 1px 3px rgba(40,37,33,.04);
+    --shadow-lg:0 16px 40px rgba(40,37,33,.16);
+    --radius:12px;
+
+    --font-display:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,system-ui,sans-serif;
+    --font-body:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,system-ui,sans-serif;
+    --font-num:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+  }
+
+  #anki-app *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  #anki-app, #anki-app{margin:0;padding:0}
+  #anki-app{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background-color:var(--paper);
+    min-height:100vh;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  #anki-app button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  #anki-app [data-action], #anki-app [data-judge], #anki-app [data-mode], #anki-app [data-opt], #anki-app [data-ocrset]{cursor:pointer;touch-action:manipulation}
+  #anki-app input, #anki-app textarea, #anki-app select{font-family:inherit}
+  #anki-app img{max-width:100%;display:block}
+
+  /* ---------- layout ---------- */
+  #anki-app .wrap{max-width:720px;margin:0 auto;padding:0 16px 120px;}
+  #anki-app .topbar{
+    position:sticky;top:0;z-index:30;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+  }
+  #anki-app .topbar-in{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px;}
+  #anki-app .logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;color:var(--ink);}
+  #anki-app .logo .badge{
+    width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:15px;
+    background:var(--clay);color:#fff;
+  }
+  #anki-app .logo small{display:block;font-weight:400;font-size:10.5px;color:var(--ink-soft);letter-spacing:.04em}
+  #anki-app .spacer{flex:1}
+
+  #anki-app .iconbtn{
+    width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:17px;
+    background:transparent;color:var(--ink-soft);border:1px solid transparent;transition:background .12s,color .12s,border-color .12s;
+  }
+  #anki-app .iconbtn:hover{background:var(--paper-2);color:var(--ink);border-color:var(--line)}
+  #anki-app .iconbtn:active{transform:scale(.96)}
+
+  /* ---------- buttons ---------- */
+  #anki-app .btn{
+    --c:var(--primary); --cd:var(--primary-d);
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--c);color:#fff;font-weight:600;font-size:15px;
+    padding:12px 18px;border-radius:var(--radius);
+    transition:filter .12s, transform .08s;line-height:1.25;text-align:center;
+  }
+  #anki-app .btn:hover{filter:brightness(.95)}
+  #anki-app .btn:active{transform:scale(.985)}
+  #anki-app .btn.lg{font-size:16px;padding:14px 22px}
+  #anki-app .btn.block{display:flex;width:100%}
+  #anki-app .btn.ghost{background:var(--paper-2);color:var(--ink);border:1px solid var(--line)}
+  #anki-app .btn.ghost:hover{background:var(--paper);filter:none;border-color:var(--ink-soft)}
+  #anki-app .btn.teal, #anki-app .btn.sky, #anki-app .btn.grape, #anki-app .btn.yellow{--c:var(--primary);--cd:var(--primary-d);color:#fff}
+  #anki-app .btn.sm{font-size:13px;padding:9px 13px;border-radius:10px}
+  #anki-app .btn[disabled]{opacity:.45;pointer-events:none}
+
+  #anki-app .chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink-soft);
+    font-weight:500;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line)}
+
+  /* ---------- cards / panels ---------- */
+  #anki-app .panel{background:var(--paper-2);border:1px solid var(--line);border-radius:14px;box-shadow:none;padding:16px}
+  #anki-app .cz-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+  #anki-app .cz-line{display:flex;gap:12px;align-items:flex-start;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;box-shadow:none;padding:13px 15px}
+  #anki-app .cz-num{flex:none;width:24px;height:24px;border-radius:7px;background:var(--paper);color:var(--ink-soft);font-weight:600;display:grid;place-items:center;font-size:12px;margin-top:5px}
+  #anki-app .cz-text{flex:1;color:var(--ink);font-weight:400;font-size:16px;line-height:2.2;word-break:break-word}
+  #anki-app .cloze-blank{display:inline-block;min-width:52px;text-align:center;font-weight:600;cursor:pointer;padding:2px 13px;margin:0 3px;border-radius:8px;background:var(--paper);border:1px dashed var(--clay);color:var(--clay-d);transition:background .15s,border-color .15s,color .15s;vertical-align:baseline}
+  #anki-app .cloze-blank:active{transform:scale(.97)}
+  #anki-app .cloze-blank.on{background:var(--clay);border-style:solid;border-color:var(--clay-d);color:#fff}
+  #anki-app .hello{margin:20px 0 4px}
+  #anki-app .hello h1{font-size:20px;font-weight:600;margin:0;line-height:1.45}
+  #anki-app .hello p{margin:4px 0 0;color:var(--ink-soft);font-weight:400;font-size:13px}
+  #anki-app .mascot{flex:none;width:64px;height:64px}
+
+  #anki-app .stats{display:flex;gap:10px;margin:14px 0 20px}
+  #anki-app .stat{flex:1;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;box-shadow:none;padding:13px 8px;text-align:center;position:relative;overflow:hidden}
+  #anki-app .stat .n{font-family:var(--font-num);font-weight:600;font-size:24px;line-height:1;color:var(--ink)}
+  #anki-app .stat .l{font-size:11.5px;font-weight:400;color:var(--ink-soft);margin-top:5px}
+  #anki-app .stat .ic{display:none}
+
+  #anki-app .sectionhead{display:flex;align-items:center;gap:10px;margin:20px 2px 10px}
+  #anki-app .sectionhead h2{font-size:13px;font-weight:600;margin:0;color:var(--ink-soft)}
+  #anki-app .sectionhead .line{flex:1;height:0;border-top:1px solid var(--line)}
+
+  /* deck list (rows) */
+  #anki-app .grid{display:flex;flex-direction:column;gap:8px}
+  #anki-app .deck{
+    position:relative;display:flex;align-items:center;gap:12px;
+    background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;color:var(--ink);
+    cursor:pointer;transition:border-color .12s,background .12s;
+  }
+  #anki-app .deck:hover{border-color:var(--ink-soft)}
+  #anki-app .deck:active{background:var(--paper)}
+  #anki-app .dicon{width:38px;height:38px;border-radius:10px;background:var(--paper);display:grid;place-items:center;font-size:20px;flex:none}
+  #anki-app .dbody{flex:1;min-width:0}
+  #anki-app .dname{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
+  #anki-app .dname .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #anki-app .dtag{flex:none;font-size:11px;font-weight:500;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  #anki-app .dmeta{font-size:12px;color:var(--ink-soft);margin-top:2px}
+  #anki-app .dbar{height:4px;border-radius:999px;background:var(--paper);margin-top:7px;overflow:hidden}
+  #anki-app .dbar i{display:block;height:100%;border-radius:999px}
+  #anki-app .deckedit{flex:none;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:transparent;color:var(--ink-soft);font-size:15px}
+  #anki-app .deckedit:hover{background:var(--paper);color:var(--ink)}
+  #anki-app .deckedit:active{transform:scale(.94)}
+
+  #anki-app .addtile{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    border:1px dashed var(--line);background:transparent;color:var(--ink-soft);
+    border-radius:12px;padding:13px;font-weight:500;cursor:pointer;transition:border-color .12s,color .12s;text-align:center;
+  }
+  #anki-app .addtile:hover{border-color:var(--clay);color:var(--clay)}
+  #anki-app .addtile:active{transform:scale(.99)}
+  #anki-app .addtile .big{font-size:17px;display:inline;margin:0 2px 0 0}
+
+  /* ---------- deck detail ---------- */
+  #anki-app .backbtn{display:inline-flex;align-items:center;gap:7px;background:none;color:var(--ink-soft);font-weight:500;font-size:14px;padding:6px 0;margin:10px 0}
+  #anki-app .deckhero{border:1px solid var(--line);background:var(--paper-2);border-radius:14px;padding:18px;color:var(--ink);position:relative;overflow:hidden;box-shadow:none;margin-bottom:6px}
+  #anki-app .deckhero .emoji{font-size:32px}
+  #anki-app .deckhero h1{font-weight:600;font-size:21px;margin:6px 0 2px;text-shadow:none}
+  #anki-app .deckhero .sub{font-weight:400;font-size:13px;color:var(--ink-soft)}
+  #anki-app .deckhero .deco{display:none}
+  #anki-app .deckhero .tools{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+  #anki-app .deckhero .tools .iconbtn{background:transparent;color:var(--ink-soft);border:1px solid var(--line)}
+
+  #anki-app .moderow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+  #anki-app .modebtn{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center;box-shadow:none;
+    transition:border-color .12s;font-weight:500;font-size:13px;color:var(--ink);
+  }
+  #anki-app .modebtn .e{font-size:22px;display:block;margin-bottom:5px}
+  #anki-app .modebtn:hover{border-color:var(--ink-soft)}
+  #anki-app .modebtn:active{transform:scale(.98)}
+  #anki-app .modebtn.p, #anki-app .modebtn.t, #anki-app .modebtn.s{color:var(--ink)}
+
+  #anki-app .cardrow{display:flex;align-items:center;gap:12px;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;box-shadow:none;margin-bottom:8px}
+  #anki-app .cardrow .thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--paper);flex:none}
+  #anki-app .cardrow .thumb.ph{display:grid;place-items:center;font-size:19px;color:var(--ink-soft)}
+  #anki-app .cardrow .ft{flex:1;min-width:0}
+  #anki-app .cardrow .q{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #anki-app .cardrow .a{font-size:13px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #anki-app .cardrow .box{flex:none;font-size:11px;font-weight:500;color:#fff;background:var(--leaf);padding:3px 8px;border-radius:999px}
+  #anki-app .cardrow .box.no{background:var(--paper);color:var(--ink-soft);border:1px solid var(--line)}
+  #anki-app .cardrow .edit{flex:none;color:var(--ink-soft);font-size:17px;padding:6px}
+
+  /* ---------- modal ---------- */
+  #anki-app .modal-bg{position:fixed;left:0;right:0;top:0;height:var(--appvh,100vh);background:rgba(38,37,34,.4);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:0;animation:fade .2s}
+  @media(min-width:560px){#anki-app .modal-bg{align-items:center;padding:20px}}
+  #anki-app .modal{background:var(--paper-2);width:100%;max-width:520px;border-radius:18px 18px 0 0;box-shadow:var(--shadow-lg);max-height:calc(var(--appvh,100vh) - 8px);overflow:auto;animation:slideup .24s cubic-bezier(.2,.9,.3,1.05)}
+  @media(min-width:560px){#anki-app .modal{border-radius:18px}}
+  #anki-app .modal .mh{position:sticky;top:0;background:var(--paper-2);display:flex;align-items:center;gap:10px;padding:18px 18px 12px;z-index:2;border-bottom:1px solid var(--line)}
+  #anki-app .modal .mh h3{font-size:17px;font-weight:600;margin:0;flex:1}
+  #anki-app .modal .mb{padding:14px 18px 20px}
+  #anki-app .macts{position:sticky;bottom:0;display:flex;gap:10px;margin-top:18px;padding:12px 0 8px;background:var(--paper-2);border-top:1px solid var(--line)}
+  #anki-app .seg{display:inline-flex;background:var(--paper);border-radius:10px;padding:3px;gap:3px}
+  #anki-app .segbtn{font-weight:500;font-size:13px;padding:8px 14px;border-radius:8px;color:var(--ink-soft)}
+  #anki-app .segbtn.on{background:var(--paper-2);color:var(--ink);border:1px solid var(--line)}
+  @keyframes slideup{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  #anki-app label.fld{display:block;margin:14px 0 0}
+  #anki-app label.fld .lab{font-weight:600;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  #anki-app .input, #anki-app .ta{width:100%;background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:16px;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  #anki-app .ta{resize:vertical;min-height:74px;line-height:1.5}
+  #anki-app .input:focus, #anki-app .ta:focus{outline:none;border-color:var(--clay);box-shadow:0 0 0 3px rgba(194,97,63,.16)}
+
+  #anki-app .photobox{margin-top:8px;border:1px dashed var(--line);border-radius:12px;padding:14px;text-align:center;background:var(--paper-2)}
+  #anki-app .photobox img{margin:0 auto 10px;border-radius:10px;max-height:200px;width:auto;box-shadow:var(--shadow)}
+  #anki-app .photo-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+  #anki-app .palette{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+  #anki-app .sw{width:32px;height:32px;border-radius:9px;box-shadow:none;cursor:pointer;transition:transform .1s;border:2px solid transparent}
+  #anki-app .sw:active{transform:scale(.9)}
+  #anki-app .sw.on{border-color:var(--ink);transform:scale(1.08)}
+  #anki-app .emojipick{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  #anki-app .ep{width:40px;height:40px;border-radius:10px;background:var(--paper-2);border:1px solid var(--line);font-size:21px;display:grid;place-items:center;cursor:pointer}
+  #anki-app .ep.on{border-color:var(--clay);border-width:2px}
+
+  /* ---------- study ---------- */
+  #anki-app .study{max-width:560px;margin:0 auto;padding:10px 16px 60px}
+  #anki-app .study-top{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
+  #anki-app .progress{flex:1;height:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  #anki-app .progress i{display:block;height:100%;background:var(--clay);border-radius:999px;transition:width .35s cubic-bezier(.2,.9,.3,1)}
+  #anki-app .study-count{font-family:var(--font-num);font-weight:600;color:var(--ink-soft);font-size:14px}
+
+  #anki-app .flip{perspective:1400px;}
+  #anki-app .flip-inner{position:relative;width:100%;min-height:320px;transition:transform .5s cubic-bezier(.3,.9,.3,1.05);transform-style:preserve-3d;cursor:pointer}
+  #anki-app .flip.on .flip-inner{transform:rotateY(180deg)}
+  #anki-app .face{position:absolute;inset:0;backface-visibility:hidden;background:var(--paper-2);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;text-align:center}
+  #anki-app .face .tag{position:absolute;top:16px;left:16px;font-weight:500;font-size:12px;color:#fff;background:var(--clay);padding:3px 11px;border-radius:999px}
+  #anki-app .face.back{transform:rotateY(180deg);background:var(--paper-2)}
+  #anki-app .face.back .tag{background:var(--teal)}
+  #anki-app .face img{max-height:170px;border-radius:12px;margin-bottom:14px;box-shadow:var(--shadow)}
+  #anki-app .face .big{font-family:var(--font-display);font-size:calc(28px*var(--bigscale,1));line-height:1.4;font-weight:600;word-break:break-word}
+  #anki-app .face .hint{margin-top:12px;color:var(--ink-soft);font-size:14px;font-weight:400}
+  #anki-app .tapnote{position:absolute;bottom:16px;left:0;right:0;color:var(--ink-soft);font-size:12px;font-weight:400;opacity:.85}
+
+  #anki-app .judge{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+
+  #anki-app .opt{display:flex;align-items:center;gap:12px;width:100%;background:var(--paper-2);border-radius:12px;padding:14px 16px;box-shadow:none;font-weight:500;font-size:16px;text-align:left;margin-bottom:10px;transition:transform .08s,border-color .12s,background .12s;border:1px solid var(--line)}
+  #anki-app .opt:hover{border-color:var(--ink-soft)}
+  #anki-app .opt:active{transform:scale(.99)}
+  #anki-app .opt .k{width:28px;height:28px;border-radius:8px;background:var(--paper);display:grid;place-items:center;font-family:var(--font-num);font-weight:600;flex:none;color:var(--ink-soft)}
+  #anki-app .opt.correct{border-color:var(--teal);background:#EAF6F1}
+  #anki-app .opt.correct .k{background:var(--teal);color:#fff}
+  #anki-app .opt.wrong{border-color:var(--pink);background:#FBEEF0}
+  #anki-app .opt.wrong .k{background:var(--pink);color:#fff}
+  #anki-app .opt.dim{opacity:.5}
+
+  #anki-app .qbig{position:relative;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;box-shadow:none;padding:24px 20px;text-align:center;margin-bottom:16px}
+  #anki-app .qbig img{max-height:150px;margin:0 auto 12px;border-radius:10px}
+  #anki-app .qbig .q{font-family:var(--font-display);font-size:calc(24px*var(--bigscale,1));font-weight:600;word-break:break-word}
+  #anki-app .qbig .ask{color:var(--ink-soft);font-weight:400;font-size:13px;margin-bottom:8px}
+
+  #anki-app .typefb{border-radius:12px;padding:14px 16px;margin-top:14px;font-weight:600;display:none}
+  #anki-app .typefb.ok{display:block;background:#EAF6F1;color:var(--teal-d)}
+  #anki-app .typefb.ng{display:block;background:#FBEEF0;color:var(--pink-d)}
+  #anki-app .typefb .ans{display:block;font-size:14px;color:var(--ink);margin-top:4px;font-weight:400}
+
+  /* result */
+  #anki-app .result{text-align:center;padding:30px 16px;max-width:480px;margin:0 auto}
+  #anki-app .result .score{font-family:var(--font-num);font-size:64px;font-weight:600;line-height:1;color:var(--clay)}
+  #anki-app .result h2{font-size:22px;font-weight:600;margin:6px 0 2px}
+  #anki-app .result p{color:var(--ink-soft);font-weight:400}
+  #anki-app .result .mascot{width:110px;margin:6px auto 4px}
+  #anki-app .resbtns{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+
+  #anki-app .empty{text-align:center;color:var(--ink-soft);padding:34px 16px}
+  #anki-app .empty .mascot{width:100px;margin:0 auto 10px}
+  #anki-app .empty p{font-weight:400}
+
+  #anki-app .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);font-weight:500;font-size:14px;padding:12px 18px;border-radius:10px;box-shadow:var(--shadow-lg);opacity:0;transition:.25s;z-index:80;pointer-events:none}
+  #anki-app .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  #anki-app #confetti{position:fixed;inset:0;pointer-events:none;z-index:90}
+  #anki-app .pop{animation:pop .3s}
+  @keyframes pop{0%{transform:scale(.85)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+  #anki-app .rise{animation:rise .4s both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  #anki-app .hidden{display:none!important}
+  #anki-app .center{text-align:center}
+  #anki-app .mut{color:var(--ink-soft);font-weight:400;font-size:13px}
+  #anki-app hr.dash{border:none;border-top:1px solid var(--line);margin:18px 0}
+  #anki-app .goalbar{height:8px;border-radius:999px;background:var(--paper-2);border:1px solid var(--line);overflow:hidden;margin:10px 0 4px}
+  #anki-app .goalbar i{display:block;height:100%;background:var(--clay);border-radius:999px;transition:width .4s}
+  #anki-app .caltitle{font-weight:500;font-size:12px;color:var(--ink-soft);margin:12px 0 6px}
+  #anki-app .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  #anki-app .calc{aspect-ratio:1;border-radius:4px;background:var(--paper);border:1px solid var(--line)}
+  #anki-app .calc.lv1{background:#EBD4C6;border-color:#EBD4C6}#anki-app .calc.lv2{background:#DBA383;border-color:#DBA383}#anki-app .calc.lv3{background:var(--clay);border-color:var(--clay)}
+  #anki-app .speakbtn{background:var(--paper);color:var(--ink-soft);border-radius:9px;width:34px;height:34px;display:grid;place-items:center;font-size:15px;flex:none;border:1px solid var(--line)}
+  #anki-app .speakbtn:active{transform:scale(.9)}
+  #anki-app .face .speakbtn{position:absolute;top:14px;right:14px}
+  #anki-app .qbig .speakbtn.inq{position:absolute;top:12px;right:12px}
+  #anki-app .cardrow .speakbtn{width:30px;height:30px;font-size:14px;border:none;background:var(--paper)}
+  #anki-app .studyopts{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 2px}
+  #anki-app .optseg{display:flex;align-items:center;gap:6px;background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:5px 8px;box-shadow:none}
+  #anki-app .optlbl{font-size:12px;font-weight:500;color:var(--ink-soft);margin-right:2px}
+  #anki-app .optseg .segbtn{padding:6px 11px;font-size:12px}
+  /* ---------- dark mode ---------- */
+  #anki-app.dark{--paper:#1E1D1A;--paper-2:#2A2825;--ink:#ECE9E3;--ink-soft:#A7A299;--line:#39372F;--clay:#D77E5B;--clay-d:#C2613F}
+  #anki-app.dark .opt.correct{background:#16322a}
+  #anki-app.dark .opt.wrong{background:#3a2530}
+  #anki-app.dark .typefb.ok{background:#16322a}
+  #anki-app.dark .typefb.ng{background:#3a2530}
+  #anki-app.dark .calc.lv1{background:#5a4636;border-color:#5a4636}
+  #anki-app.dark .calc.lv2{background:#8a5e44;border-color:#8a5e44}
+
+
+/* --- 統合時の調整（パシャ暗記をまなびログの1セクションとして収める） --- */
+#anki-app{display:block; margin:22px 0 0; border-radius:var(--radius);
+  border:1px solid var(--border); padding-bottom:4px;}
+#anki-app .topbar{position:static;}
+#anki-app .stat::before{content:none;}
+</style>
+
 </head>
 <body>
 
@@ -418,14 +735,16 @@
   </div>
   <div class="streak" id="streak"><span>🔥</span><span id="streakN">0日連続</span></div>
 </header>
+<nav class="tabs" id="tabs" aria-label="表示切替"></nav>
 
-<section class="stats">
+
+<section class="stats" data-tab="ふりかえり">
   <div class="stat"><div class="label">今週の合計</div><div class="val" id="s-week">0<small>時間</small></div></div>
   <div class="stat"><div class="label">今月の記録数</div><div class="val" id="s-count">0<small>件</small></div></div>
   <div class="stat"><div class="label">最長連続</div><div class="val" id="s-max">0<small>日</small></div></div>
 </section>
 
-<section>
+<section data-tab="ふりかえり">
   <div class="card">
     <div class="card-title">
       <span>この3か月の学習カレンダー</span>
@@ -445,7 +764,7 @@
   </div>
 </section>
 
-<section>
+<section data-tab="きろく">
   <div class="card timer-card">
     <div class="tmode" id="tMode">
       <div class="tmode-btn on" data-mode="pomodoro">🍅 ポモドーロ</div>
@@ -474,7 +793,7 @@
   </div>
 </section>
 
-<section>
+<section data-tab="きろく">
   <div class="card">
     <div class="card-title"><span>＋ 今日の学びをさっと記録</span><span class="manage-link" id="manageCats">項目を編集</span></div>
     <div class="cat-manager" id="catManager">
@@ -523,7 +842,7 @@
   </div>
 </section>
 
-<section>
+<section data-tab="多読">
   <div class="card">
     <div class="card-title">
       <span>英語多読 100万語</span>
@@ -558,7 +877,7 @@
   </div>
 </section>
 
-<section>
+<section data-tab="講座">
   <div class="card">
     <div class="card-title">
       <span>Claude Code Academy</span>
@@ -587,7 +906,7 @@
   </div>
 </section>
 
-<section>
+<section data-tab="日本史">
   <div class="card">
     <div class="card-title">
       <span>日本史・流れがわかる39講</span>
@@ -616,18 +935,42 @@
   </div>
 </section>
 
-<section>
+<section data-tab="ふりかえり">
   <div class="card" id="brkCard">
     <div class="card-title"><span>カテゴリ別（今月）</span></div>
     <div id="breakdown"></div>
   </div>
 </section>
 
-<section>
+<section data-tab="きろく">
   <div class="card-title" style="padding:0 2px;"><span>最近の記録</span><span id="totalRec" style="font-size:12px;"></span></div>
   <div id="entries"></div>
 </section>
 
+<!-- === パシャ暗記 統合ここから === -->
+<section id="anki-app" data-tab="暗記">
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="logo" data-action="home" role="button">
+      <span class="badge">📚</span>
+      <div>パシャ暗記<small>とって・つくって・おぼえる</small></div>
+    </div>
+    <span class="spacer"></span>
+    <button class="iconbtn" data-action="menu" title="メニュー">⚙️</button>
+  </div>
+</div>
+
+<div id="app" class="wrap"></div>
+
+<canvas id="confetti"></canvas>
+<div class="toast" id="pashaToast"></div>
+
+<!-- hidden file inputs -->
+<input id="fileCam" type="file" accept="image/*" capture="environment" class="hidden">
+<input id="filePick" type="file" accept="image/*" class="hidden">
+<input id="fileImport" type="file" accept=".json,application/json" class="hidden">
+<input id="filePdf" type="file" accept=".pdf,application/pdf" class="hidden">
+</section>
 <div class="footer">
   <button class="btn ghost" id="exportBtn">バックアップ書き出し</button>
   <button class="btn ghost" id="importBtn">読み込み</button>
@@ -2177,5 +2520,1901 @@ function setupNs(){
   });
 })();
 </script>
+
+<script>
+/* タブ切替：data-tab を持つセクションを出し分ける。
+   パシャ暗記のセクションは統合時に data-tab="暗記" を付けて差し込まれる。 */
+(function(){
+  var ORDER = ['きろく','ふりかえり','多読','講座','日本史','暗記'];
+  var KEY = 'manabi-tab';
+  function init(){
+    var secs = [].slice.call(document.querySelectorAll('[data-tab]'));
+    var bar  = document.getElementById('tabs');
+    if(!bar || !secs.length) return;
+    var names = ORDER.filter(function(n){
+      return secs.some(function(s){ return s.dataset.tab === n; });
+    });
+    function show(name, scroll){
+      secs.forEach(function(s){ s.style.display = (s.dataset.tab === name) ? '' : 'none'; });
+      [].slice.call(bar.children).forEach(function(b){
+        var on = b.dataset.tabname === name;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      try{ localStorage.setItem(KEY, name); }catch(e){}
+      if(scroll) window.scrollTo({top:0, behavior:'smooth'});
+    }
+    names.forEach(function(n){
+      var b = document.createElement('button');
+      b.type='button'; b.className='tab'; b.textContent=n; b.dataset.tabname=n;
+      b.setAttribute('role','tab');
+      b.addEventListener('click', function(){ show(n, true); });
+      bar.appendChild(b);
+    });
+    bar.setAttribute('role','tablist');
+    var saved = null;
+    try{ saved = localStorage.getItem(KEY); }catch(e){}
+    show(names.indexOf(saved) >= 0 ? saved : names[0], false);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<!-- === パシャ暗記 統合ここから === -->
+<script>
+(function(){
+
+"use strict";
+
+/* =========================================================
+   パシャ暗記  —  単一ファイル・外部APIなし・ローカル保存
+   ========================================================= */
+
+const DECK_COLORS = [
+  ['pink','var(--pink)','var(--pink-d)'],
+  ['teal','var(--teal)','var(--teal-d)'],
+  ['sky','var(--sky)','var(--sky-d)'],
+  ['yellow','var(--yellow)','var(--yellow-d)'],
+  ['grape','var(--grape)','var(--grape-d)'],
+  ['leaf','var(--leaf)','var(--leaf-d)'],
+  ['orange','var(--orange)','var(--orange-d)'],
+];
+const DECK_EMOJI = ['📘','✏️','🌸','⭐','🔤','🌏','🧪','🔢','🎨','🎵','🐧','🍀','🏯','💡','📝','🦊'];
+const MASTER_BOX = 4; // box>=4 を「おぼえた」とする（最大5）
+
+/* ---------- tiny IndexedDB wrapper ---------- */
+const DB_NAME='sugoi-anki', STORE='decks';
+const APP_VER='v40'; // 画面に表示するバージョン（SWのCACHE版数に合わせる）
+let _db=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,1);
+    r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE,{keyPath:'id'});};
+    r.onsuccess=()=>{_db=r.result;res(_db);};
+    r.onerror=()=>rej(r.error);
+  });
+}
+function tx(mode){return _db.transaction(STORE,mode).objectStore(STORE);}
+function idbAll(){return new Promise((res,rej)=>{const r=tx('readonly').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);});}
+function idbPut(v){const _p=new Promise((res,rej)=>{const r=tx('readwrite').put(v);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);}); if(typeof scheduleSync==='function')scheduleSync(); return _p;}
+function idbDel(id){const _p=new Promise((res,rej)=>{const r=tx('readwrite').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);}); if(typeof scheduleSync==='function')scheduleSync(); return _p;}
+
+/* ---------- state ---------- */
+let DECKS=[];               // [{id,name,emoji,color,createdAt,cards:[...]}]
+let state={view:'home', deckId:null, session:null, studyOpts:{reverse:false,weak:false}};
+let pendingImport=null;
+let META=loadMeta();        // {streak, lastDay, totalReviews}
+
+function loadMeta(){
+  try{return JSON.parse(localStorage.getItem('sugoi-meta'))||{}}catch(e){return {}}
+}
+function saveMeta(){try{localStorage.setItem('sugoi-meta',JSON.stringify(META))}catch(e){} if(typeof scheduleSync==='function')scheduleSync();}
+
+/* ---------- AI設定（任意・自分のAPIキー。キーはこの端末のみに保存） ---------- */
+const AI_MODELS=[['claude-haiku-4-5','ふつう・最安（おすすめ）'],['claude-sonnet-4-6','高品質'],['claude-opus-4-8','最高品質']];
+function loadApiKey(){try{return localStorage.getItem('pasha-anki-key')||''}catch(e){return ''}}
+function saveApiKey(k){try{k?localStorage.setItem('pasha-anki-key',k):localStorage.removeItem('pasha-anki-key')}catch(e){}}
+function loadAiModel(){try{return localStorage.getItem('pasha-anki-model')||'claude-haiku-4-5'}catch(e){return 'claude-haiku-4-5'}}
+function saveAiModel(m){try{localStorage.setItem('pasha-anki-model',m)}catch(e){}}
+
+/* ---------- 間隔反復・デイリーゴール・読み上げ ---------- */
+const INTERVAL_DAYS=[0,1,3,7,16,35]; // box(0..5)ごとの復習間隔（日）
+function cardDue(c){ if(!c.last)return true; const days=(Date.now()-c.last)/86400000; return days>=INTERVAL_DAYS[Math.min(5,c.box||0)]; }
+function dueList(){ const cards=[],ids=new Set(); DECKS.forEach(d=>d.cards.forEach(c=>{ if(cardDue(c)){cards.push(c);ids.add(d.id);} })); return {cards,ids:[...ids]}; }
+function dueCount(){ let n=0; DECKS.forEach(d=>d.cards.forEach(c=>{ if(cardDue(c))n++; })); return n; }
+function dailyGoal(){ return META.dailyGoal||10; }
+function todayCount(){ return (META.history&&META.history[todayStr()])||0; }
+function addStudyCount(n){ META.history=META.history||{}; const t=todayStr(); META.history[t]=(META.history[t]||0)+n; saveMeta(); }
+function addAccuracy(c,t){ if(!t)return; META.accHist=META.accHist||{}; const d=todayStr(); const a=META.accHist[d]||{c:0,t:0}; a.c+=c; a.t+=t; META.accHist[d]=a; saveMeta(); }
+function calendarHTML(){
+  const out=[]; const now=new Date();
+  for(let i=27;i>=0;i--){ const d=new Date(); d.setDate(now.getDate()-i);
+    const key=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    const c=(META.history&&META.history[key])||0;
+    let lv=0; if(c>=1)lv=1; if(c>=5)lv=2; if(c>=10)lv=3;
+    out.push('<div class="calc lv'+lv+'" title="'+key+'：'+c+'枚"></div>');
+  }
+  return '<div class="cal">'+out.join('')+'</div>';
+}
+let speakToken=0;
+const REPEAT_GAP=700; // 2回くりかえし読むときの、1回目と2回目のあいだ（ミリ秒）
+function stopSpeak(){ speakToken++; try{ speechSynthesis.cancel(); }catch(_){} }
+/* 声の選択（無料・端末内蔵の声を使う。なめらかな声があれば自動で選ぶ／手動でも選べる） */
+function allVoices(){ try{ return speechSynthesis.getVoices()||[]; }catch(e){ return []; } }
+function voicePref(isJa){ try{ return localStorage.getItem(isJa?'pasha-voice-ja':'pasha-voice-en')||''; }catch(e){ return ''; } }
+function pickVoice(isJa){
+  const voices=allVoices(); if(!voices.length)return null;
+  const pref=voicePref(isJa); if(pref){ const pv=voices.find(v=>v.name===pref); if(pv)return pv; }
+  const w=isJa?'ja':'en';
+  const cand=voices.filter(v=>(v.lang||'').toLowerCase().indexOf(w)===0);
+  if(!cand.length)return null;
+  const score=v=>{ let s=0; const n=v.name||'';
+    if(/premium|enhanced|neural|natural|拡張|高品質|siri/i.test(n))s+=10;
+    if(/google/i.test(n))s+=5;
+    if(isJa&&/(kyoko|o-?ren|otoya|hattori|サキ|キョーコ)/i.test(n))s+=3;
+    if(v.default)s+=1; return s; };
+  return cand.slice().sort((a,b)=>score(b)-score(a))[0];
+}
+function speakSample(isJa, voiceName){
+  try{ if(!('speechSynthesis' in window))return; speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(isJa?'こんにちは。これは音声のテストです。':'Hello. This is a voice test.');
+    u.lang=isJa?'ja-JP':'en-US'; u.rate=0.95;
+    let v=null; if(voiceName)v=allVoices().find(x=>x.name===voiceName); if(!v)v=pickVoice(isJa); if(v)u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function voiceModal(){
+  const voices=allVoices();
+  const ja=voices.filter(v=>(v.lang||'').toLowerCase().indexOf('ja')===0);
+  const en=voices.filter(v=>(v.lang||'').toLowerCase().indexOf('en')===0);
+  const opt=(list,pref)=>['<option value="">（自動で いちばん良い声）</option>'].concat(list.map(v=>`<option value="${esc(v.name)}" ${v.name===pref?'selected':''}>${esc(v.name)}</option>`)).join('');
+  const none=!voices.length;
+  openModal(`<div class="mh"><h3>🔊 音声設定</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+   <div class="mb">
+    <div class="mut" style="margin-bottom:10px">読み上げの声を選べます（<b>無料</b>・端末に入っている声を使います）。${none?'<br><b>この端末では声が見つかりませんでした。</b>下の方法で追加してみてください。':'いちばん良い声を自動で選びますが、手動でも選べます。'}</div>
+    <label class="fld"><span class="lab">🇯🇵 日本語の声</span>
+      <select class="input" id="voiceJa">${opt(ja,voicePref(true))}</select></label>
+    <button class="btn ghost sm" data-action="voicetest" data-l="ja" style="margin:2px 0 12px">🔊 日本語をためす</button>
+    <label class="fld"><span class="lab">🔤 英語の声</span>
+      <select class="input" id="voiceEn">${opt(en,voicePref(false))}</select></label>
+    <button class="btn ghost sm" data-action="voicetest" data-l="en" style="margin:2px 0 12px">🔊 英語をためす</button>
+    <div class="mut" style="font-size:12px;line-height:1.8;border-top:1px dashed var(--line);padding-top:10px;margin-top:6px">
+      <b>もっとなめらかな声を入れる（無料）</b><br>
+      ・iPhone / iPad：設定 → アクセシビリティ → 読み上げコンテンツ → 声 → 日本語 →「拡張」や「高品質」の声をダウンロード<br>
+      ・Android：設定 → システム → テキスト読み上げ → Google音声サービスの声をダウンロード<br>
+      ・パソコン（Edge/Chrome）：「Microsoft …（Natural）」などの自然な声が選べます<br>
+      入れたあと、上のリストでその声を選んでください。
+    </div>
+   </div>`);
+  const save=()=>{ try{ const j=$('#voiceJa').value,e=$('#voiceEn').value; j?localStorage.setItem('pasha-voice-ja',j):localStorage.removeItem('pasha-voice-ja'); e?localStorage.setItem('pasha-voice-en',e):localStorage.removeItem('pasha-voice-en'); }catch(_){}};
+  const sj=$('#voiceJa'),se=$('#voiceEn'); if(sj)sj.addEventListener('change',save); if(se)se.addEventListener('change',save);
+}
+/* 読み上げ前の整形（誤読対策）: 改行→間、丸数字→「Nばん」、記号除去 */
+function ttsClean(text){
+  return String(text||'')
+    .replace(/[\r\n]+/g,'、')
+    .replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g,m=>'、'+('①②③④⑤⑥⑦⑧⑨⑩'.indexOf(m)+1)+'ばん、')
+    .replace(/[：:]/g,'、')
+    .replace(/[／/]/g,'、')
+    .replace(/[「」『』【】（）()]/g,' ')
+    .replace(/[ \t　]+/g,' ')
+    .replace(/(?:\s*、\s*)+/g,'、')
+    .replace(/^[、\s]+|[、\s]+$/g,'')
+    .trim();
+}
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window)||!text)return;
+    speechSynthesis.cancel();
+    const t=ttsClean(text);
+    speakChunks(t, function(){ const tk=speakToken; setTimeout(function(){ if(speakToken===tk) speakChunks(t, null); }, REPEAT_GAP); }); // 2回くりかえし読む（あいだに少し間）
+  }catch(e){}
+}
+/* 文を短いチャンクに分割し、onend で順送り（Chromeの約15秒打ち切り回避＆長文でも最後まで） */
+function speakChunks(text, onDone){
+  const my=++speakToken;
+  const s=String(text||''); const parts=[]; let buf='';
+  for(const ch of s){
+    buf+=ch;
+    if('。．！？、'.indexOf(ch)>=0 && buf.length>=14){ parts.push(buf); buf=''; }
+    else if(buf.length>=55){ parts.push(buf); buf=''; }
+  }
+  if(buf.trim())parts.push(buf);
+  if(!('speechSynthesis' in window)||!parts.length){ if(onDone)onDone(); return; }
+  const isJa=/[぀-ヿ㐀-鿿]/.test(s);
+  let i=0;
+  const next=()=>{
+    if(my!==speakToken)return;
+    if(i>=parts.length){ if(onDone&&my===speakToken)onDone(); return; }
+    const part=parts[i++]; let done=false;
+    const adv=()=>{ if(done)return; done=true; if(my===speakToken)next(); };
+    try{
+      const u=new SpeechSynthesisUtterance(part);
+      u.lang=isJa?'ja-JP':'en-US'; u.rate=0.95;
+      const _v=pickVoice(isJa); if(_v)u.voice=_v;     // なめらかな声があれば使う
+      u.onend=adv; u.onerror=adv;
+      speechSynthesis.speak(u);
+      setTimeout(adv, Math.min(16000, part.length*230+2500)); // 保険: onend不発でも進む
+    }catch(e){ adv(); }
+  };
+  next();
+}
+function qSide(card){ return (state.session&&state.session.reverse)?card.back:card.front; }
+function aSide(card){ return (state.session&&state.session.reverse)?card.front:card.back; }
+function b64encUtf8(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64decUtf8(b){ return decodeURIComponent(escape(atob(b))); }
+function applyTheme(){ document.getElementById('anki-app').classList.toggle('dark',META.theme==='dark'); const m=document.querySelector('meta[name="theme-color"]'); if(m)m.setAttribute('content',META.theme==='dark'?'#1E1D1A':'#F4F2EC'); }
+function toggleTheme(){ META.theme=(META.theme==='dark')?'light':'dark'; saveMeta(); applyTheme(); menuModal(); toast(META.theme==='dark'?'ダークモードにしました 🌙':'ライトモードにしました ☀️'); }
+
+function uid(){return 'id'+Math.random().toString(36).slice(2,10)+(performance.now()|0).toString(36);}
+function deckById(id){return DECKS.find(d=>d.id===id);}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+
+function bumpStreak(){
+  const t=todayStr();
+  if(META.lastDay===t) return;
+  const y=new Date(); y.setDate(y.getDate()-1);
+  const ystr=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
+  META.streak = (META.lastDay===ystr)? (META.streak||0)+1 : 1;
+  META.lastDay=t; saveMeta();
+}
+
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function colorVars(name){const c=DECK_COLORS.find(x=>x[0]===name)||DECK_COLORS[0];return {c:c[1],d:c[2]};}
+function masteredCount(deck){return deck.cards.filter(c=>(c.box||0)>=MASTER_BOX).length;}
+function deckPct(deck){return deck.cards.length? Math.round(masteredCount(deck)/deck.cards.length*100):0;}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+let toastTimer=null;
+function toast(msg){const t=$('#pashaToast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),1900);}
+
+/* ---------- image resize ---------- */
+async function fileToDataURL(file,max=1200,q=0.72){
+  let bmp;
+  try{ bmp = await createImageBitmap(file,{imageOrientation:'from-image'}); }
+  catch(e){ bmp = await loadImg(file); }
+  let {width:w,height:h}= bmp;
+  const scale=Math.min(1,max/Math.max(w,h));
+  w=Math.round(w*scale); h=Math.round(h*scale);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  cv.getContext('2d').drawImage(bmp,0,0,w,h);
+  return cv.toDataURL('image/jpeg',q);
+}
+function loadImg(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=rej;img.src=URL.createObjectURL(file);});}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function render(){
+  const app=$('#app');
+  if(state.view==='home') app.innerHTML=viewHome();
+  else if(state.view==='deck') app.innerHTML=viewDeck();
+  else if(state.view==='cloze') app.innerHTML=viewCloze();
+  else if(state.view==='report') app.innerHTML=viewReport();
+  else if(state.view==='flash') app.innerHTML=viewFlash();
+  else if(state.view==='quiz') app.innerHTML=viewQuiz();
+  else if(state.view==='type') app.innerHTML=viewType();
+  else if(state.view==='listen') app.innerHTML=viewListen();
+  else if(state.view==='result') app.innerHTML=viewResult();
+  window.scrollTo(0,0);
+  // entrance animation
+  $$('.rise',app).forEach((el,i)=>{el.style.animationDelay=(i*55)+'ms';});
+  if(state.view==='flash') wireFlash();
+  if(state.view==='quiz') wireQuiz();
+  if(state.view==='type') wireType();
+  if(state.view==='listen') wireListen();
+}
+
+function go(view,opts={}){ if(state.view==='listen'&&view!=='listen'){listenToken++;stopSpeak();} state.view=view;if(view==='home')state.deckId=null;Object.assign(state,opts);render();}
+
+/* ---------- HOME ---------- */
+function viewHome(){
+  const totalCards=DECKS.reduce((s,d)=>s+d.cards.length,0);
+  const totalMastered=DECKS.reduce((s,d)=>s+masteredCount(d),0);
+  const streak=META.streak||0;
+  const due=dueCount(); const goal=dailyGoal(); const done=todayCount();
+
+  const deckCard=(d)=>{
+    const col=colorVars(d.color);const pct=deckPct(d);
+    return `<div class="deck rise" data-action="open" data-id="${d.id}">
+      <div class="dicon">${esc(d.emoji||'📘')}</div>
+      <div class="dbody">
+        <div class="dname"><span class="nm">${esc(d.name)}</span>${isSharedDeck(d)?'<span class="dtag">共有</span>':''}</div>
+        <div class="dmeta">カード ${d.cards.length} ・ おぼえた ${masteredCount(d)}${pct>0?' ・ '+pct+'%':''}</div>
+        ${pct>0?`<div class="dbar"><i style="width:${pct}%;background:${col.c}"></i></div>`:''}
+      </div>
+      <button class="deckedit" data-action="editdeck" data-id="${d.id}" title="名前を編集・削除">✏️</button>
+    </div>`;
+  };
+  const mine=DECKS.filter(d=>!isSharedDeck(d));
+  const sharedDecks=DECKS.filter(isSharedDeck);
+  const mineHTML=mine.map(deckCard).join('');
+  const sharedHTML=sharedDecks.map(deckCard).join('');
+  const showShared = sharedDecks.length>0 || !!syncSharedCode();
+
+  return `
+  ${DECKS.length?(due>0
+    ? `<button class="btn lg block teal rise" data-action="review" style="margin:14px 0 2px">🔁 そろそろ復習（${due}枚）</button>`
+    : `<div class="panel rise" style="text-align:center;margin:14px 0 2px;font-weight:600">✅ 今日ぶんの復習は完了！えらい！</div>`):''}
+
+  <div class="sectionhead rise" style="margin-top:16px"><h2>わたしの暗記帳</h2><span class="line"></span></div>
+  <div class="grid">
+    ${mineHTML}
+    <div class="addtile rise" data-action="newdeck"><span><span class="big">＋</span>新しい暗記帳をつくる</span></div>
+  </div>
+
+  ${showShared?`
+  <div class="sectionhead rise" style="margin-top:22px"><h2>👨‍👩‍👧 家族みんなの暗記帳</h2><span class="line"></span></div>
+  <div class="grid">
+    ${sharedHTML}
+    <div class="addtile rise" data-action="newshareddeck"><span><span class="big">＋</span>家族共有の暗記帳をつくる</span></div>
+  </div>`:''}
+
+  <div class="rise" style="margin-top:22px;text-align:center">
+    <button class="btn ghost sm" data-action="photoBulk0">📷📄 写真・PDFからまとめてカードを作る</button>
+  </div>
+
+  ${DECKS.length?`<div class="rise center" style="margin-top:20px"><button class="btn ghost sm" data-action="report" style="color:var(--ink-soft);font-size:12px">📊 学習の記録・にがてを見る</button></div>`:''}
+  `;
+}
+
+/* ---------- DECK DETAIL ---------- */
+function viewDeck(){
+  const d=deckById(state.deckId); if(!d) {go('home');return '';}
+  const {c,dd}=colorVars(d.color);const col=colorVars(d.color);
+  const pct=deckPct(d);
+  const rev=!!(state.studyOpts&&state.studyOpts.reverse); const weak=!!(state.studyOpts&&state.studyOpts.weak);
+  const cards=d.cards.map(card=>{
+    const box=card.box||0;const ok=box>=MASTER_BOX;
+    return `<div class="cardrow rise" data-action="editcard" data-id="${card.id}">
+      ${card.image?`<img class="thumb" src="${card.image}">`:`<div class="thumb ph">📝</div>`}
+      <div class="ft">
+        <div class="q">${esc(card.front)||'(もんだい なし)'}</div>
+        <div class="a">${esc(card.back)||'(こたえ なし)'}</div>
+      </div>
+      ${card.front?`<button class="speakbtn" data-action="speak" data-text="${esc(card.front)}">🔊</button>`:''}
+      <span class="box ${ok?'':'no'}">${ok?'おぼえた':'box '+(box+0)}</span>
+      <span class="edit">✏️</span>
+    </div>`;
+  }).join('');
+
+  return `
+  <button class="backbtn" data-action="home">‹ もどる</button>
+  <div class="deckhero rise">
+    <div class="tools">
+      <button class="iconbtn" data-action="printdeck" title="紙に印刷">🖨️</button>
+      <button class="iconbtn" data-action="shareqr" title="QRで共有">📲</button>
+      <button class="iconbtn" data-action="editdeck" title="暗記帳を編集">✏️</button>
+    </div>
+    <span class="emoji">${esc(d.emoji||'📘')}</span>
+    <h1>${esc(d.name)}</h1>
+    <div class="sub">カード ${d.cards.length}まい ・ おぼえた ${masteredCount(d)} ・ ${pct}%</div>
+    <span class="deco">${esc(d.emoji||'📘')}</span>
+  </div>
+
+  <div class="studyopts rise">
+    <div class="optseg"><span class="optlbl">向き</span>
+      <button class="segbtn ${rev?'':'on'}" data-action="optrev" data-v="0">ふつう</button>
+      <button class="segbtn ${rev?'on':''}" data-action="optrev" data-v="1">⇄ 逆</button>
+    </div>
+    <div class="optseg"><span class="optlbl">範囲</span>
+      <button class="segbtn ${weak?'':'on'}" data-action="optweak" data-v="0">ぜんぶ</button>
+      <button class="segbtn ${weak?'on':''}" data-action="optweak" data-v="1">にがてだけ</button>
+    </div>
+  </div>
+
+  <div class="moderow rise">
+    <button class="modebtn p" data-action="start" data-mode="flash" ${d.cards.length?'':'disabled'}><span class="e">🔄</span>フラッシュ<br>カード</button>
+    <button class="modebtn t" data-action="start" data-mode="quiz" ${d.cards.length>=2?'':'disabled'}><span class="e">✅</span>4たく<br>クイズ</button>
+    <button class="modebtn s" data-action="start" data-mode="type" ${d.cards.length?'':'disabled'}><span class="e">⌨️</span>タイピング</button>
+  </div>
+
+  <button class="btn block sky rise" data-action="listen" ${d.cards.length?'':'disabled'} style="margin:0 0 4px">🎧 聞き流し（自動で読み上げ）</button>
+
+  <div style="margin:14px 0">
+    <button class="btn block" data-action="addcard">＋ カードを追加</button>
+  </div>
+
+  ${(d.sheets&&d.sheets.length)?`
+  <div class="sectionhead rise"><h2>📝 穴埋めシート</h2><span class="line"></span></div>
+  ${d.sheets.map(s=>`<div class="cardrow rise" data-action="clozeopen" data-id="${s.id}">
+    <div class="thumb ph">📝</div>
+    <div class="ft"><div class="q">穴埋めシート（${(s.answers||[]).length}問）</div><div class="a">タップで解く・空欄タップで答え</div></div>
+    <button class="speakbtn" data-action="clozedel" data-id="${s.id}" title="削除">🗑️</button>
+  </div>`).join('')}
+  `:''}
+
+  <div class="sectionhead rise"><h2>カード一覧</h2><span class="line"></span></div>
+  ${d.cards.length? cards : emptyCards()}
+  `;
+}
+function emptyCards(){
+  return `<div class="empty">${mascotSVG(110)}<p>まだカードがないよ。<br>「＋カードを追加」か「📷写真から」で作ってみよう！</p></div>`;
+}
+
+/* ---------- 穴埋めシート（読み込んだ文章を丸ごと1画面・空欄タップで答え表示） ---------- */
+function clozeSheetFromText(text){
+  const parts=String(text||'').split(/[。\.!?！？\n]+/).map(s=>s.trim()).filter(s=>s.length>=6);
+  const lines=[]; const answers=[];
+  for(const s of parts){
+    const kw=pickKeyword(s);
+    if(kw){ const idx=answers.length; const line=s.replace(kw,'{{'+idx+'}}'); if(line!==s){ answers.push(kw); lines.push(line); continue; } }
+    lines.push(s);
+  }
+  return {template:lines.join('\n'), answers};
+}
+function clozeBlankHTML(ans){ return '<span class="cloze-blank" data-action="clozeblank" data-ans="'+esc(ans||'')+'">？</span>'; }
+function clozeHTML(sheet){
+  const lines=String(sheet.template||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const ans=sheet.answers||[];
+  return lines.map(function(line,n){
+    const h=esc(line).replace(/\{\{(\d+)\}\}/g,function(m,i){ return clozeBlankHTML(ans[+i]); });
+    return '<div class="cz-line"><span class="cz-num">'+(n+1)+'</span><span class="cz-text">'+h+'</span></div>';
+  }).join('');
+}
+function viewCloze(){
+  const d=deckById(state.deckId); if(!d){go('home');return '';}
+  const sheet=(d.sheets||[]).find(s=>s.id===state.sheetId); if(!sheet){go('deck');return '';}
+  const col=colorVars(d.color);
+  return `
+  <button class="backbtn" data-action="deck">‹ もどる</button>
+  <div class="deckhero rise">
+    <span class="emoji">📝</span>
+    <h1>穴埋めシート</h1>
+    <div class="sub">${(sheet.answers||[]).length}問 ・ 空欄をタップで答え</div>
+  </div>
+  <div class="rise" style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">
+    <button class="btn ghost sm" data-action="clozeshowall">👁️ ぜんぶ表示</button>
+    <button class="btn ghost sm" data-action="clozehideall">🙈 ぜんぶ隠す</button>
+    <button class="btn ghost sm" data-action="printcloze">🖨️ 印刷</button>
+  </div>
+  <div class="cz-list rise">${clozeHTML(sheet)}</div>
+  `;
+}
+async function clozeDel(id){
+  const d=deckById(state.deckId); if(!d)return;
+  if(!confirm('この穴埋めシートを削除します。よろしいですか？'))return;
+  d.sheets=(d.sheets||[]).filter(s=>s.id!==id); await idbPut(d); go('deck'); toast('削除しました');
+}
+
+/* =========================================================
+   STUDY: FLASHCARD
+   ========================================================= */
+function startSession(mode){
+  const d=deckById(state.deckId);
+  const opts=state.studyOpts||{};
+  let pool=opts.weak?d.cards.filter(c=>(c.box||0)<MASTER_BOX):d.cards.slice();
+  if(!pool.length){toast(opts.weak?'にがてカードはありません！ぜんぶおぼえてる？🎉':'カードがありません');return;}
+  if(mode==='quiz'&&pool.length<2){toast('クイズには2枚以上ひつようです');return;}
+  pool.sort((a,b)=>(a.box||0)-(b.box||0));
+  const groups={};pool.forEach(c=>{(groups[c.box||0]=groups[c.box||0]||[]).push(c);});
+  const cards=Object.keys(groups).sort((a,b)=>a-b).flatMap(k=>shuffle(groups[k]));
+  state.session={mode,cards,idx:0,correct:0,wrong:0,results:[],deckIds:[state.deckId],review:false,reverse:!!opts.reverse};
+  go(mode);
+}
+function startReview(){
+  const {cards:due,ids}=dueList();
+  if(!due.length){toast('今日ぶんの復習は完了！🎉');return;}
+  const groups={};due.forEach(c=>{(groups[c.box||0]=groups[c.box||0]||[]).push(c);});
+  const cards=Object.keys(groups).sort((a,b)=>a-b).flatMap(k=>shuffle(groups[k]));
+  state.deckId=null;
+  state.session={mode:'flash',cards,idx:0,correct:0,wrong:0,results:[],deckIds:ids,review:true};
+  go('flash');
+}
+
+function viewFlash(){
+  const s=state.session;const card=s.cards[s.idx];
+  return `
+  <div class="study">
+    <div class="study-top">
+      <button class="iconbtn" data-action="open" data-id="${state.deckId}">✕</button>
+      <div class="progress"><i style="width:${s.idx/s.cards.length*100}%"></i></div>
+      <span class="study-count">${s.idx+1}/${s.cards.length}</span>
+    </div>
+    <div class="flip" id="flip">
+      <div class="flip-inner" id="flipInner">
+        <div class="face front">
+          <span class="tag">もんだい</span>
+          ${qSide(card)?`<button class="speakbtn" data-action="speak" data-text="${esc(qSide(card))}">🔊</button>`:''}
+          ${card.image?`<img src="${card.image}">`:''}
+          <div class="big">${esc(qSide(card))}</div>
+          ${card.hint?`<div class="hint">💡 ${esc(card.hint)}</div>`:''}
+          <div class="tapnote">タップで こたえを見る 👆</div>
+        </div>
+        <div class="face back">
+          <span class="tag">こたえ</span>
+          ${aSide(card)?`<button class="speakbtn" data-action="speak" data-text="${esc(aSide(card))}">🔊</button>`:''}
+          <div class="big">${esc(aSide(card))}</div>
+          ${qSide(card)?`<div class="hint">${esc(qSide(card))}</div>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="judge" id="judge" style="visibility:hidden">
+      <button class="btn ghost" data-judge="again">🔁 もういちど</button>
+      <button class="btn teal" data-judge="ok">⭕ できた！</button>
+    </div>
+  </div>`;
+}
+function wireFlash(){
+  const flip=$('#flip'),judge=$('#judge');
+  flip.addEventListener('click',e=>{
+    if(e.target.closest('[data-action]'))return;
+    flip.classList.toggle('on');
+    if(flip.classList.contains('on')) judge.style.visibility='visible';
+  });
+  $$('[data-judge]').forEach(b=>b.addEventListener('click',()=>{
+    const s=state.session,card=s.cards[s.idx];
+    if(!card)return;
+    if(b.dataset.judge==='ok'){card.box=Math.min(5,(card.box||0)+1);s.correct++;}
+    else{card.box=Math.max(1,Math.min((card.box||0),1));s.wrong++;}
+    card.last=Date.now();
+    s.idx++;
+    if(s.idx>=s.cards.length){finishSession();}
+    else render();
+  }));
+}
+
+/* =========================================================
+   STUDY: QUIZ (4択)
+   ========================================================= */
+function buildOptions(card){
+  const deck=deckById(state.deckId);
+  const correct=aSide(card);
+  const others=shuffle(deck.cards.filter(c=>c.id!==card.id && aSide(c) && aSide(c)!==correct));
+  const opts=[correct];
+  for(const o of others){if(opts.length>=4)break;const v=aSide(o);if(!opts.includes(v))opts.push(v);}
+  return shuffle(opts);
+}
+function viewQuiz(){
+  const s=state.session;const card=s.cards[s.idx];
+  if(!s.opts) s.opts=buildOptions(card);
+  const letters=['A','B','C','D'];
+  const opts=s.opts.map((o,i)=>`<button class="opt" data-opt="${esc(o)}"><span class="k">${letters[i]}</span><span>${esc(o)}</span></button>`).join('');
+  return `
+  <div class="study">
+    <div class="study-top">
+      <button class="iconbtn" data-action="open" data-id="${state.deckId}">✕</button>
+      <div class="progress"><i style="width:${s.idx/s.cards.length*100}%"></i></div>
+      <span class="study-count">${s.idx+1}/${s.cards.length}</span>
+    </div>
+    <div class="qbig">
+      ${qSide(card)?`<button class="speakbtn inq" data-action="speak" data-text="${esc(qSide(card))}">🔊</button>`:''}
+      <div class="ask">${s.reverse?'こたえは どれ？':'この いみは？'}</div>
+      ${card.image?`<img src="${card.image}">`:''}
+      <div class="q">${esc(qSide(card))}</div>
+    </div>
+    <div id="opts">${opts}</div>
+    <div class="center" id="next" style="display:none;margin-top:6px">
+      <button class="btn block" data-action="qnext">つぎへ ›</button>
+    </div>
+  </div>`;
+}
+function wireQuiz(){
+  const s=state.session;const card=s.cards[s.idx];const ans=aSide(card);
+  $$('#opts .opt').forEach(b=>b.addEventListener('click',()=>{
+    if(s.answered)return; s.answered=true;
+    const chosen=b.dataset.opt;const correct=chosen===ans;
+    $$('#opts .opt').forEach(x=>{
+      if(x.dataset.opt===ans)x.classList.add('correct');
+      else if(x===b)x.classList.add('wrong');
+      else x.classList.add('dim');
+      x.style.pointerEvents='none';
+    });
+    if(correct){card.box=Math.min(5,(card.box||0)+1);s.correct++;burst(0.5,0.4);}
+    else{card.box=1;s.wrong++;}
+    card.last=Date.now();
+    $('#next').style.display='block';
+  }));
+}
+function qnext(){
+  const s=state.session;s.answered=false;s.opts=null;s.idx++;
+  if(s.idx>=s.cards.length)finishSession();else render();
+}
+
+/* =========================================================
+   STUDY: TYPING
+   ========================================================= */
+function normalize(str){
+  return (str||'').trim().toLowerCase().replace(/\s+/g,'')
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0))
+    .replace(/[。、.,!！?？]/g,'');
+}
+function viewType(){
+  const s=state.session;const card=s.cards[s.idx];
+  return `
+  <div class="study">
+    <div class="study-top">
+      <button class="iconbtn" data-action="open" data-id="${state.deckId}">✕</button>
+      <div class="progress"><i style="width:${s.idx/s.cards.length*100}%"></i></div>
+      <span class="study-count">${s.idx+1}/${s.cards.length}</span>
+    </div>
+    <div class="qbig">
+      ${qSide(card)?`<button class="speakbtn inq" data-action="speak" data-text="${esc(qSide(card))}">🔊</button>`:''}
+      <div class="ask">こたえを にゅうりょく</div>
+      ${card.image?`<img src="${card.image}">`:''}
+      <div class="q">${esc(qSide(card))}</div>
+      ${card.hint?`<div class="mut" style="margin-top:8px">💡 ${esc(card.hint)}</div>`:''}
+    </div>
+    <input class="input" id="typeIn" placeholder="ここに こたえを かいてね" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="done">
+    <div class="typefb" id="typefb"></div>
+    <div style="margin-top:14px" id="typebtns">
+      <button class="btn block" id="checkBtn" data-action="typecheck">こたえあわせ</button>
+    </div>
+  </div>`;
+}
+function wireType(){
+  const inp=$('#typeIn');inp.focus();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();typecheck();}});
+}
+function typecheck(){
+  const s=state.session;const card=s.cards[s.idx];const inp=$('#typeIn');
+  if(s.answered){typeNext();return;}
+  s.answered=true;
+  const ok=normalize(inp.value)===normalize(aSide(card)) && inp.value.trim()!=='';
+  const fb=$('#typefb');inp.disabled=true;
+  if(ok){fb.className='typefb ok';fb.innerHTML='⭕ せいかい！';card.box=Math.min(5,(card.box||0)+1);s.correct++;burst(0.5,0.4);}
+  else{fb.className='typefb ng';fb.innerHTML='✕ おしい！<span class="ans">こたえ：'+esc(aSide(card))+'</span>';card.box=1;s.wrong++;}
+  card.last=Date.now();
+  const btns=$('#typebtns');
+  btns.innerHTML = (ok?'':'<button class="btn ghost block" data-action="typeforgive" style="margin-bottom:10px">やっぱり正解にする ⭕</button>')
+    + '<button class="btn block teal" data-action="typenext">つぎへ ›</button>';
+}
+function typeforgive(){
+  const s=state.session,card=s.cards[s.idx];
+  if(s.lastForgiven)return;s.lastForgiven=true;
+  s.wrong--;s.correct++;card.box=Math.min(5,(card.box||0)+1);
+  $('#typefb').className='typefb ok';$('#typefb').innerHTML='⭕ 正解にしたよ！';
+  burst(0.5,0.4);
+}
+function typeNext(){const s=state.session;s.answered=false;s.lastForgiven=false;s.idx++;if(s.idx>=s.cards.length)finishSession();else render();}
+
+/* =========================================================
+   FINISH + RESULT
+   ========================================================= */
+async function finishSession(){
+  if(!state.session||state.session.done)return; state.session.done=true;
+  const ids=(state.session&&state.session.deckIds)||[state.deckId];
+  for(const id of ids){ const d=deckById(id); if(d) await idbPut(d); }
+  bumpStreak();
+  const n=state.session.cards.length;
+  const _s=state.session; addAccuracy(_s.correct||0,(_s.correct||0)+(_s.wrong||0));
+  META.totalReviews=(META.totalReviews||0)+n; saveMeta();
+  addStudyCount(n);
+  go('result');
+  setTimeout(()=>burst(0.5,0.35,160),150);
+}
+function viewResult(){
+  const s=state.session;const total=s.correct+s.wrong;
+  const pct=total?Math.round(s.correct/total*100):0;
+  let title,msg;
+  if(pct===100){title='かんぺき！すごい！';msg='ぜんもん せいかい！天才だ ✨';}
+  else if(pct>=80){title='いいかんじ！';msg='その調子！もう少しでマスター 💪';}
+  else if(pct>=50){title='よくがんばった！';msg='くりかえせば ぜったい おぼえられるよ';}
+  else{title='ナイス チャレンジ！';msg='まちがえたところを もう一回やってみよう';}
+  return `
+  <div class="result">
+    ${mascotSVG(120,pct>=80?'happy':'cheer')}
+    <div class="score pop">${pct}<span style="font-size:30px">点</span></div>
+    <h2>${title}</h2>
+    <p>${msg}</p>
+    <div class="chip" style="margin-top:10px">⭕ ${s.correct}　✕ ${s.wrong}　・　${total}もん</div>
+    <div class="resbtns">
+      <button class="btn lg block teal" data-action="restart">もう一回 やる 🔄</button>
+      <button class="btn lg block ghost" data-action="open" data-id="${state.deckId}">暗記帳に もどる</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- 学習レポート（にがて・正答率） ---------- */
+function weakCardsAll(){ const out=[]; DECKS.forEach(d=>d.cards.forEach(c=>{ if((c.box||0)<MASTER_BOX) out.push({card:c,deck:d}); })); return out; }
+function startWeakReview(){
+  const list=weakCardsAll();
+  if(!list.length){toast('にがてカードはありません！🎉');return;}
+  const ids=[...new Set(list.map(x=>x.deck.id))];
+  const groups={}; list.forEach(x=>{(groups[x.card.box||0]=groups[x.card.box||0]||[]).push(x.card);});
+  const cards=Object.keys(groups).sort((a,b)=>a-b).flatMap(k=>shuffle(groups[k]));
+  state.session={mode:'flash',cards,idx:0,correct:0,wrong:0,results:[],deckIds:ids,review:true};
+  go('flash');
+}
+function reportGraphHTML(){
+  const h=META.accHist||{}; const now=new Date(); const days=[];
+  for(let i=13;i>=0;i--){ const d=new Date(); d.setDate(now.getDate()-i); const key=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); const a=h[key]; const pct=(a&&a.t)?Math.round(a.c/a.t*100):null; days.push({pct:pct,label:(d.getMonth()+1)+'/'+d.getDate()}); }
+  if(!days.some(x=>x.pct!==null)) return '<div class="mut" style="text-align:center;padding:14px 0">まだ記録がありません。クイズやタイピングをやると、ここに正答率が出ます 📈</div>';
+  const bars=days.map(x=>{
+    const px=x.pct===null?0:Math.max(4,Math.round(x.pct*0.72));
+    const col=x.pct===null?'var(--line)':(x.pct>=80?'var(--teal)':x.pct>=50?'var(--yellow)':'var(--pink)');
+    return '<div style="flex:1;text-align:center"><div style="height:84px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center"><div style="font-size:9px;color:var(--ink-soft)">'+(x.pct===null?'':x.pct)+'</div><div style="width:62%;height:'+px+'px;background:'+col+';border-radius:5px 5px 0 0;margin-top:2px"></div></div><div style="font-size:8px;color:var(--ink-soft);margin-top:3px">'+x.label+'</div></div>';
+  }).join('');
+  return '<div style="display:flex;gap:2px;align-items:flex-end">'+bars+'</div>';
+}
+function weakListHTML(){
+  const weak=weakCardsAll();
+  if(!weak.length) return '<div class="empty" style="padding:18px">'+mascotSVG(90,'happy')+'<p>にがてカードはありません！<br>ぜんぶ おぼえてる？ すごい！🎉</p></div>';
+  weak.sort((a,b)=>(a.card.box||0)-(b.card.box||0));
+  const shown=weak.slice(0,60);
+  const rows=shown.map(x=>'<div class="cardrow" data-action="open" data-id="'+x.deck.id+'"><div class="thumb ph">'+esc(x.deck.emoji||'📘')+'</div><div class="ft"><div class="q">'+(esc(x.card.front)||'(もんだいなし)')+'</div><div class="a">'+esc(x.deck.name)+' ・ '+(esc(x.card.back)||'')+'</div></div><span class="box no">box '+(x.card.box||0)+'</span></div>').join('');
+  const more=weak.length>shown.length?'<div class="mut" style="text-align:center;margin-top:6px">ほか '+(weak.length-shown.length)+'件</div>':'';
+  return rows+more;
+}
+function viewReport(){
+  const totalMastered=DECKS.reduce((s,d)=>s+masteredCount(d),0);
+  const weakN=weakCardsAll().length;
+  const h=META.accHist||{}; let tc=0,tt=0; Object.keys(h).forEach(k=>{tc+=h[k].c||0;tt+=h[k].t||0;});
+  const overall=tt?Math.round(tc/tt*100):null;
+  return `
+  <button class="backbtn" data-action="home">‹ もどる</button>
+  <div class="sectionhead rise"><h2>📊 学習の記録</h2><span class="line"></span></div>
+  <div class="stats rise">
+    <div class="stat"><div class="n">${totalMastered}</div><div class="l">おぼえた ⭐</div></div>
+    <div class="stat"><div class="n">${weakN}</div><div class="l">にがて 💪</div></div>
+    <div class="stat"><div class="n">${overall===null?'—':overall}</div><div class="l">正答率% 🎯</div></div>
+  </div>
+  <div class="panel rise" style="margin-top:14px">
+    <div style="font-weight:800;margin-bottom:8px">🎯 正答率のうつりかわり（さいきん2週間）</div>
+    ${reportGraphHTML()}
+  </div>
+  <div class="sectionhead rise" style="margin-top:18px"><h2>💪 にがてカード</h2><span class="line"></span></div>
+  ${weakN?`<button class="btn block teal rise" data-action="weakreview" style="margin-bottom:12px">💪 にがてを まとめて復習（${weakN}）</button>`:''}
+  ${weakListHTML()}
+  `;
+}
+
+/* ---------- 印刷（紙のプリント・カード一覧／穴埋めシート） ---------- */
+function openPrint(title, bodyHTML){
+  const w=window.open('','_blank');
+  if(!w){ toast('印刷ウィンドウを開けませんでした（ポップアップを許可してね）'); return; }
+  w.document.write('<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+'</title><style>body{font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;color:#111;margin:22px;line-height:1.7}h1{font-size:20px;margin:0 0 4px}.sub{color:#666;font-size:12px;margin-bottom:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:8px 10px;text-align:left;font-size:14px;vertical-align:top}th{background:#f3f3f3}.num{width:34px;text-align:center;color:#666}.q{width:48%}.cz{font-size:15px;line-height:2.6}.cz .b{border-bottom:1px solid #333;display:inline-block;min-width:84px;text-align:center;padding:0 6px}.key{margin-top:18px;font-size:13px;color:#222;border-top:1px dashed #bbb;padding-top:10px}.key h2{font-size:14px;margin:0 0 6px}.bar{margin-bottom:16px}.bar button{font-size:14px;padding:8px 18px;border-radius:8px;border:1px solid #999;background:#fff;cursor:pointer}@media print{.bar{display:none}}</style></head><body><div class="bar"><button onclick="window.print()">🖨️ 印刷する</button></div>'+bodyHTML+'</body></html>');
+  w.document.close();
+  setTimeout(function(){ try{w.focus();w.print();}catch(e){} },350);
+}
+function deckPrintHTML(d, withAnswers){
+  const rows=d.cards.map((c,i)=>'<tr><td class="num">'+(i+1)+'</td><td class="q">'+(esc(c.front)||'')+'</td><td>'+(withAnswers?(esc(c.back)||''):'')+'</td></tr>').join('');
+  return '<h1>'+esc(d.name)+'</h1><div class="sub">カード '+d.cards.length+'まい'+(withAnswers?'（答えあり）':'（テスト用・答えはかくしています）')+'</div><table><thead><tr><th class="num">#</th><th class="q">もんだい</th><th>こたえ</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function clozePrintHTML(d, sheet, withAnswers){
+  const ans=sheet.answers||[];
+  let html=esc(sheet.template||'').replace(/\{\{(\d+)\}\}/g,function(m,i){ return '<span class="b">'+(withAnswers?(esc(ans[+i])||''):'（'+(+i+1)+'）')+'</span>'; });
+  html=html.replace(/\n/g,'<br>');
+  let key='';
+  if(!withAnswers) key='<div class="key"><h2>こたえ</h2>'+ans.map((a,i)=>'（'+(i+1)+'）'+esc(a)).join('　')+'</div>';
+  return '<h1>📝 穴埋めシート（'+esc(d.name)+'）</h1><div class="sub">'+ans.length+'問'+(withAnswers?'（答えあり）':'')+'</div><div class="cz">'+html+'</div>'+key;
+}
+function printDeck(id, wa){ const d=deckById(id); if(!d)return; if(!d.cards.length){toast('カードがありません');return;} openPrint(d.name, deckPrintHTML(d,wa)); }
+function printCloze(id, sid, wa){ const d=deckById(id); const s=(d&&(d.sheets||[]).find(x=>x.id===sid)); if(!d||!s){toast('シートが見つかりません');return;} openPrint('穴埋めシート', clozePrintHTML(d,s,wa)); }
+function printModal(kind){
+  const isCloze=kind==='cloze';
+  openModal(`<div class="mh"><h3>🖨️ 印刷</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="mut" style="margin-bottom:12px">どちらを印刷しますか？（新しいタブで開きます）</div>
+      <button class="btn block teal" data-action="doprint" data-kind="${kind}" data-ans="1" style="margin-bottom:10px">📄 ${isCloze?'答えありで印刷':'問題＋答え（おぼえる用）'}</button>
+      <button class="btn block ghost" data-action="doprint" data-kind="${kind}" data-ans="0">✍️ ${isCloze?'テスト用（答えは下にまとめる）':'問題だけ（テスト用）'}</button>
+    </div>`);
+}
+
+/* =========================================================
+   MODALS  (deck / card / bulk / menu)
+   ========================================================= */
+let modalState={};
+function openModal(html){
+  const _ex=document.getElementById('modalbg');if(_ex)_ex.remove(); // 既存モーダルだけ消す（modalStateは保持）
+  const bg=document.createElement('div');bg.className='modal-bg';bg.id='modalbg';
+  bg.innerHTML=`<div class="modal">${html}</div>`;
+  bg.addEventListener('click',e=>{if(e.target===bg)closeModal();});
+  document.getElementById('anki-app').appendChild(bg);
+}
+function closeModal(){const m=$('#modalbg');if(m)m.remove();modalState={};}
+
+/* ----- deck editor ----- */
+function deckModal(deck,opts){
+  const isNew=!deck;
+  modalState={deck:deck?{...deck}:{id:uid(),name:'',emoji:'📘',color:'pink',cards:[],createdAt:Date.now(),shared:!!(opts&&opts.shared)}};
+  const d=modalState.deck;
+  const sws=DECK_COLORS.map(c=>`<div class="sw ${d.color===c[0]?'on':''}" style="background:linear-gradient(135deg,${c[1]},${c[2]})" data-swatch="${c[0]}"></div>`).join('');
+  const eps=DECK_EMOJI.map(e=>`<div class="ep ${d.emoji===e?'on':''}" data-emoji="${e}">${e}</div>`).join('');
+  openModal(`
+    <div class="mh"><h3>${isNew?'新しい暗記帳':'暗記帳を編集'}</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <label class="fld"><span class="lab">📕 なまえ</span>
+        <input class="input" id="dName" value="${esc(d.name)}" placeholder="れい：中1 英単語" maxlength="40" enterkeyhint="done"></label>
+      <label class="fld"><span class="lab">🎨 いろ</span></label><div class="palette" id="dPalette">${sws}</div>
+      <label class="fld"><span class="lab">😀 アイコン</span></label><div class="emojipick" id="dEmoji">${eps}</div>
+      <label class="fld"><span class="lab">👨‍👩‍👧 おき場所</span></label>
+      <div class="optseg" id="dShared" style="margin-bottom:4px">
+        <button type="button" class="segbtn ${d.shared?'':'on'}" data-sh="0">🔒 自分用</button>
+        <button type="button" class="segbtn ${d.shared?'on':''}" data-sh="1">👨‍👩‍👧 家族共有</button>
+      </div>
+      <div class="mut" style="margin:-2px 0 6px;font-size:12px">「家族共有」にすると、家族の合言葉でつながった全員に表示されます（同期オンのとき）。</div>
+      <div class="macts">
+        ${isNew?'':'<button class="btn ghost sm" data-action="deldeck">🗑️ 削除</button>'}
+        <button class="btn block" data-action="savedeck">${isNew?'つくる':'保存する'}</button>
+      </div>
+    </div>`);
+  $('#dPalette').addEventListener('click',e=>{const sw=e.target.closest('[data-swatch]');if(!sw)return;d.color=sw.dataset.swatch;$$('#dPalette .sw').forEach(x=>x.classList.toggle('on',x===sw));});
+  $('#dEmoji').addEventListener('click',e=>{const ep=e.target.closest('[data-emoji]');if(!ep)return;d.emoji=ep.dataset.emoji;$$('#dEmoji .ep').forEach(x=>x.classList.toggle('on',x===ep));});
+  $('#dShared').addEventListener('click',e=>{const b=e.target.closest('[data-sh]');if(!b)return;d.shared=(b.dataset.sh==='1');$$('#dShared .segbtn').forEach(x=>x.classList.toggle('on',x===b));});
+  $('#dName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();savedeck();}});
+}
+async function savedeck(){
+  const d=modalState.deck;d.name=$('#dName').value.trim()||'なまえなし暗記帳';
+  const existing=deckById(d.id);
+  if(existing){Object.assign(existing,{name:d.name,emoji:d.emoji,color:d.color,shared:!!d.shared});await idbPut(existing);}
+  else{d.shared=!!d.shared;DECKS.push(d);await idbPut(d);}
+  closeModal();
+  if(!existing){state.deckId=d.id;go('deck');toast('暗記帳をつくったよ！🎉');}
+  else render();
+}
+async function deldeck(){
+  const d=modalState.deck;
+  if(!confirm(`「${d.name}」を削除します。カードも全部消えます。よろしいですか？`))return;
+  META.delDecks=META.delDecks||{}; META.delDecks[d.id]=Date.now(); saveMeta(); // 削除マーク（同期で復活させない）
+  await idbDel(d.id);DECKS=DECKS.filter(x=>x.id!==d.id);closeModal();go('home');toast('削除しました');
+}
+
+/* ----- カード追加のえらぶ画面（手入力／写真・PDFまとめて） ----- */
+function addChooserModal(){
+  openModal(`
+    <div class="mh"><h3>＋ カードを追加</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="mut" style="margin-bottom:12px">どうやって追加しますか？</div>
+      <button class="btn block" data-action="newcard" style="margin-bottom:10px">✍️ 手で1枚ずつ作る</button>
+      <button class="btn block teal" data-action="photoBulk1">📷📄 写真・PDFでまとめて作る</button>
+      <div class="mut" style="margin-top:10px;font-size:12px">「まとめて」は、写真やPDFから一気にカードを作れます（AIも使えます）。</div>
+    </div>`);
+}
+
+/* ----- card editor ----- */
+function cardModal(card){
+  const d=deckById(state.deckId);const isNew=!card;
+  modalState={card:card?{...card}:{id:uid(),front:'',back:'',hint:'',image:null,box:0},isNew};
+  const c=modalState.card;
+  openModal(`
+    <div class="mh"><h3>${isNew?'カードを追加':'カードを編集'}</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="photobox" id="photobox">${cardPhotoHTML(c)}</div>
+      <div id="ocrArea"></div>
+      <label class="fld"><span class="lab">❓ もんだい（おもて）</span>
+        <textarea class="ta" id="cFront" placeholder="れい：apple / 「光合成」の英語 など">${esc(c.front)}</textarea></label>
+      <label class="fld"><span class="lab">⭕ こたえ（うら）</span>
+        <textarea class="ta" id="cBack" placeholder="れい：りんご / photosynthesis など">${esc(c.back)}</textarea></label>
+      <label class="fld"><span class="lab">💡 ヒント（任意）</span>
+        <input class="input" id="cHint" value="${esc(c.hint||'')}" placeholder="おぼえるためのヒント"></label>
+      <div class="macts">
+        ${isNew?'':'<button class="btn ghost sm" data-action="delcard">🗑️</button>'}
+        <button class="btn block teal" data-action="savecard">${isNew?'追加する':'保存する'}</button>
+      </div>
+    </div>`);
+}
+function cardPhotoHTML(c){
+  if(c.image){
+    const hasKey=!!loadApiKey();
+    return `<img src="${c.image}" id="cImg">
+      <div class="photo-actions">
+        <button class="btn sm" data-action="aigencard" ${hasKey?'':'disabled'}>✨ AIで作る</button>
+        <button class="btn ghost sm" data-action="ocr">🔎 文字を読み取る</button>
+        <button class="btn ghost sm" data-action="cropcard">✂️ 切り抜く</button>
+        <button class="btn ghost sm" data-action="rmphoto">🗑️</button>
+      </div>
+      ${hasKey?'<div class="mut" style="margin-top:6px">✨「AIで作る」＝写真から自動で問題化（1件なら下に入力／複数ならまとめて追加）</div>':'<div class="mut" style="margin-top:6px">✨AIは 右上⚙️→「AI設定」でキー登録すると使えます（任意）</div>'}`;
+  }
+  const aiReady=!!loadApiKey();
+  return `<div style="font-size:40px">📷</div><div class="mut" style="margin:6px 0 12px">${aiReady?'✨ 写真を入れると「AIで作る」が使えます':'写真をつけると おぼえやすいよ'}</div>
+    <div class="photo-actions">
+      <button class="btn sm" data-action="cam">カメラで撮る</button>
+      <button class="btn ghost sm" data-action="pick">画像をえらぶ</button>
+    </div>`;
+}
+async function aigenCard(){
+  const d=deckById(state.deckId); if(!d)return;
+  const c=modalState.card; if(!c||!c.image)return;
+  if(!loadApiKey()){toast('⚙️AI設定でAPIキーを登録してね');return;}
+  const area=$('#ocrArea');
+  if(area)area.innerHTML='<div class="panel" style="margin-top:10px"><div class="mut">✨ AIが問題を作っています…（数秒〜十数秒）</div></div>';
+  try{
+    const pairs=await aiGenerateFromImage(c.image);
+    if(!pairs.length){ if(area)area.innerHTML='<div class="panel" style="margin-top:10px"><div class="mut">カードを作れませんでした。別の写真でお試しを。</div></div>'; return; }
+    if(pairs.length===1){
+      $('#cFront').value=pairs[0][0]; $('#cBack').value=pairs[0][1];
+      if(area)area.innerHTML='<div class="mut" style="margin-top:10px">✅ AIが入れました。確認して「追加する」を押してね。</div>';
+    }else{
+      for(const p of pairs){ d.cards.push({id:uid(),front:p[0],back:p[1],hint:'',image:null,box:0}); }
+      await idbPut(d); closeModal(); render(); toast('✨ AIが '+pairs.length+'枚 作成しました 🎉');
+    }
+  }catch(e){
+    var m=(e&&e.message)||'エラー';
+    var disp = m==='NO_KEY'?'⚙️AI設定でAPIキーを登録してください':(/failed to fetch|networkerror|load failed/i.test(m)?'通信できませんでした（ネット接続/CORSの可能性）':esc(m));
+    if(area)area.innerHTML='<div class="panel" style="margin-top:10px"><div class="mut">⚠️ '+disp+'</div></div>';
+  }
+}
+async function savecard(){
+  const d=deckById(state.deckId);const c=modalState.card;
+  c.front=$('#cFront').value.trim();c.back=$('#cBack').value.trim();c.hint=$('#cHint').value.trim();
+  if(!c.front && !c.back && !c.image){toast('もんだいか こたえを入れてね');return;}
+  if(modalState.isNew){d.cards.push(c);} else {const idx=d.cards.findIndex(x=>x.id===c.id);if(idx>=0)d.cards[idx]=c;}
+  await idbPut(d);closeModal();render();toast(modalState.isNew?'カードを追加！':'保存したよ');
+}
+async function delcard(){
+  const d=deckById(state.deckId);const c=modalState.card;
+  if(!confirm('このカードを削除しますか？'))return;
+  d.cards=d.cards.filter(x=>x.id!==c.id);await idbPut(d);closeModal();render();toast('削除しました');
+}
+
+/* photo capture into card */
+function refreshPhotoBox(){const pb=$('#photobox');if(pb)pb.innerHTML=cardPhotoHTML(modalState.card);}
+async function handlePhoto(file){
+  if(!file)return;
+  toast('写真を読み込み中…');
+  try{
+    modalState.card.image=await fileToDataURL(file);
+    refreshPhotoBox();
+  }catch(e){toast('写真の読み込みに失敗しました');}
+}
+
+/* ----- OCR (端末内・任意・遅延ロード) ----- */
+let _tessReady=null;
+function loadTesseract(){
+  if(_tessReady)return _tessReady;
+  _tessReady=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload=()=>res(window.Tesseract);
+    s.onerror=()=>{_tessReady=null;rej(new Error('load'));};
+    document.head.appendChild(s);
+  });
+  return _tessReady;
+}
+async function runOCR(imageURL,onProgress){
+  const T=await loadTesseract();
+  const {data}=await T.recognize(imageURL,'jpn+eng',{logger:m=>{if(m.status==='recognizing text'&&onProgress)onProgress(m.progress);}});
+  return data.text||'';
+}
+async function ocrToCard(){
+  const c=modalState.card;if(!c.image)return;
+  const area=$('#ocrArea');area.innerHTML=`<div class="panel" style="margin-top:10px"><div class="mut">📡 読み取り中… <span id="ocrPct">0%</span><br><span style="font-size:11px">※初回はファイルの取得に少し時間がかかります（オフライン時は使えません）</span></div></div>`;
+  try{
+    const text=await runOCR(c.image,p=>{const e=$('#ocrPct');if(e)e.textContent=Math.round(p*100)+'%';});
+    const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
+    area.innerHTML=`<div class="panel" style="margin-top:10px">
+      <div class="lab" style="font-weight:800;margin-bottom:6px">🔎 読み取り結果（タップで入れる）</div>
+      <div class="mut" style="margin-bottom:8px">行をタップ → もんだい/こたえ に入れられます</div>
+      ${lines.map(l=>`<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
+          <div style="flex:1;background:#fff;border:2px solid var(--line);border-radius:10px;padding:7px 10px;font-size:14px">${esc(l)}</div>
+          <button class="btn sm" data-ocrset="front" data-val="${esc(l)}">問</button>
+          <button class="btn sm teal" data-ocrset="back" data-val="${esc(l)}">答</button>
+        </div>`).join('')||'<div class="mut">文字が読み取れませんでした</div>'}
+    </div>`;
+    area.querySelectorAll('[data-ocrset]').forEach(b=>b.addEventListener('click',()=>{
+      const t=b.dataset.ocrset==='front'?$('#cFront'):$('#cBack');
+      t.value=(t.value?t.value+' ':'')+b.dataset.val;
+    }));
+  }catch(e){
+    area.innerHTML=`<div class="panel" style="margin-top:10px"><div class="mut">読み取りに失敗しました。インターネット接続をご確認ください（この機能のみ初回にデータ取得が必要です）。手入力でもOKです。</div></div>`;
+  }
+}
+
+/* ----- bulk from photo ----- */
+function bulkActionsHTML(){
+  const cloze=modalState.bulkMode==='cloze';
+  const hasKey=!!loadApiKey();
+  if(cloze){
+    return hasKey
+      ? '<button class="btn block" data-action="bulkmakeai" id="bulkAiBtn">✨ AIで穴埋めシートを作る</button>'
+        +'<div class="mut" style="margin-top:6px;font-size:12px">穴埋めシートはAIが作ります（空欄にする語を賢く選びます）。写真があれば写真から、なければ上の文章から。</div>'
+      : '<button class="btn block" data-action="aisettings">⚙️ AI設定（キー登録）をひらく</button>'
+        +'<div class="mut" style="margin-top:6px;font-size:12px">穴埋めシートはAIで作ります。右上⚙️→「AI設定」でAPIキーを登録すると使えます（任意）。※カードなら無料でも作れます。</div>';
+  }
+  return '<button class="btn block teal" data-action="bulkmake" id="bulkMakeBtn">🃏 カードを作る</button>'
+    + (hasKey
+       ? '<button class="btn block" data-action="bulkmakeai" id="bulkAiBtn" style="margin-top:8px">✨ AIでカードを作る</button><div class="mut" style="margin-top:6px;font-size:12px">「AIで作る」は、写真があれば写真から、なければ上の文章から作ります。</div>'
+       : '<div class="mut" style="margin-top:8px;font-size:12px">✨ もっと賢く作りたいときは、右上⚙️→「AI設定」でキー登録（任意）すると「AIで作る」が使えます。</div>');
+}
+function bulkModal(){
+  modalState={bulkImage:null, bulkMode:'list'};
+  openModal(`
+    <div class="mh"><h3>📷📄 写真・PDFから問題を作る</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="lab" style="font-weight:800;font-size:13px;margin-bottom:6px">① 何を作る？</div>
+      <div class="seg" id="bulkModeSeg">
+        <button class="segbtn on" data-bmode="list">🃏 カード</button>
+        <button class="segbtn" data-bmode="cloze">📝 穴埋めシート</button>
+      </div>
+      <div class="mut" id="bulkHowto" style="margin:8px 0 0">「英単語<b>　</b>意味」のように区切ると、おもて／うらに自動で分けます。</div>
+
+      <div class="lab" style="font-weight:800;font-size:13px;margin:16px 0 6px">② 元になる文章・写真</div>
+      <div class="photobox" id="bulkPhoto">${bulkPhotoHTML()}</div>
+      <div id="bulkAi" style="margin-top:10px"></div>
+      <label class="fld" style="margin-top:10px"><span class="lab">📝 文章（手で入力・読み取り結果）</span>
+        <textarea class="ta" id="bulkText" style="min-height:120px" placeholder="apple りんご&#10;dog いぬ&#10;光合成 photosynthesis"></textarea></label>
+
+      <div class="lab" style="font-weight:800;font-size:13px;margin:16px 0 6px">③ 作る</div>
+      <div id="bulkActions">${bulkActionsHTML()}</div>
+    </div>`);
+  $('#bulkModeSeg').addEventListener('click',e=>{
+    const b=e.target.closest('[data-bmode]');if(!b)return;
+    modalState.bulkMode=b.dataset.bmode;
+    $$('#bulkModeSeg .segbtn').forEach(x=>x.classList.toggle('on',x===b));
+    const cloze=modalState.bulkMode==='cloze';
+    $('#bulkHowto').innerHTML = cloze
+      ? '文章を入れる/写真・PDFを読み取ると、大事な語を空欄にした「穴埋めシート」を1枚作ります。'
+      : '「英単語<b>　</b>意味」のように区切ると、おもて／うらに自動で分けます。';
+    $('#bulkText').setAttribute('placeholder', cloze
+      ? '光合成は葉緑体で行われる。\n鎌倉幕府は1192年に成立した。'
+      : 'apple りんご\ndog いぬ\n光合成 photosynthesis');
+    const ba=$('#bulkActions'); if(ba)ba.innerHTML=bulkActionsHTML();
+  });
+}
+function bulkPhotoHTML(){
+  if(modalState.bulkImage){
+    return `<img src="${modalState.bulkImage}" style="max-height:170px;margin:0 auto 10px;border-radius:12px;box-shadow:var(--shadow)">
+      <div class="photo-actions">
+        <button class="btn ghost sm" data-action="bocr">🔎 文字を読み取る（無料）</button>
+        <button class="btn ghost sm" data-action="cropbulk">✂️ 切り抜く</button>
+        <button class="btn ghost sm" data-action="brm">🗑️</button>
+      </div>
+      <div class="mut" style="margin-top:8px;font-size:12px">この写真は、下の③「✨ AIで作る」でそのまま読み取れます。無料で作るときは「🔎 文字を読み取る」を押してね。</div>`;
+  }
+  return `<div style="font-size:38px">📷📄</div>
+    <div class="mut" style="margin:6px 0 12px">写真を撮る／画像を選ぶ／PDFを読み込む（手入力だけでもOK）</div>
+    <div class="photo-actions">
+      <button class="btn sm" data-action="bcam">カメラで撮る</button>
+      <button class="btn ghost sm" data-action="bpick">画像をえらぶ</button>
+      <button class="btn ghost sm" data-action="bpdf">📄 PDFをえらぶ</button>
+    </div>`;
+}
+function refreshBulkPhoto(){const pb=$('#bulkPhoto');if(pb)pb.innerHTML=bulkPhotoHTML();}
+async function handleBulkPhoto(file){
+  if(!file)return;
+  toast('写真を読み込み中…');
+  try{ modalState.bulkImage=await fileToDataURL(file); refreshBulkPhoto(); }
+  catch(e){ toast('写真の読み込みに失敗しました'); }
+}
+async function bocr(){
+  if(!modalState.bulkImage)return;
+  const box=$('#bulkAi');
+  box.innerHTML=`<div class="panel"><div class="mut">📡 読み取り中… <span id="bPct">0%</span><br><span style="font-size:11px">※初回はデータ取得に少し時間（オフライン不可）</span></div></div>`;
+  try{
+    const text=await runOCR(modalState.bulkImage,p=>{const e=$('#bPct');if(e)e.textContent=Math.round(p*100)+'%';});
+    $('#bulkText').value=text.split('\n').map(s=>s.trim()).filter(Boolean).join('\n');
+    box.innerHTML=`<div class="mut">✅ 読み取りました。下で確認・修正してね。</div>`;
+  }catch(e){ box.innerHTML=`<div class="panel"><div class="mut">読み取りに失敗。手入力でもOKです。</div></div>`; }
+}
+function parseLine(line){
+  const seps=[/\t/,/[:：]/,/[,，、]/,/\s{2,}/,/[　]/,/\s/];
+  for(const re of seps){const m=line.split(re);if(m.length>=2){const f=m[0].trim();const b=m.slice(1).join(' ').trim();if(f&&b)return[f,b];}}
+  return [line.trim(),''];
+}
+async function bulkmake(){
+  if(modalState.bulkMode==='cloze'){ return bulkmakeai(); } // 穴埋めシートはAI専用
+  let targetDeck=deckById(state.deckId);
+  if(!targetDeck){ targetDeck={id:uid(),name:'写真からつくった暗記帳',emoji:'📷',color:'sky',cards:[],createdAt:Date.now()}; DECKS.push(targetDeck); }
+  const raw=$('#bulkText').value;
+  if(modalState.bulkMode==='cloze'){
+    const sheet=clozeSheetFromText(raw);
+    if(!sheet.answers.length){toast('穴埋めを作れる文が見つかりませんでした');return;}
+    targetDeck.sheets=targetDeck.sheets||[];
+    const sid=uid();
+    targetDeck.sheets.push({id:sid,template:sheet.template,answers:sheet.answers,createdAt:Date.now()});
+    await idbPut(targetDeck);
+    closeModal(); state.deckId=targetDeck.id; state.sheetId=sid; go('cloze'); toast('穴埋めシートを作ったよ！📝');
+    return;
+  }
+  const lines=raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){toast('内容が空です');return;}
+  const pairs=lines.map(parseLine);
+  for(const p of pairs){targetDeck.cards.push({id:uid(),front:p[0],back:p[1],hint:'',image:null,box:0});}
+  await idbPut(targetDeck);
+  closeModal();state.deckId=targetDeck.id;go('deck');toast(pairs.length+'まいのカードを作ったよ！🎉');
+}
+
+/* 文章→穴埋め（端末内・無料・APIなし） */
+function pickKeyword(s){
+  let m=s.match(/[「『]([^」』]{1,18})[」』]/); if(m)return m[1];
+  m=s.match(/[゠-ヿーー]{3,}/); if(m)return m[0];
+  m=s.match(/[一-鿿]{2,}/); if(m)return m[0];
+  m=s.match(/\d[\d,\.]*\s*[^\s。、,]{0,4}/); if(m)return m[0].trim();
+  return null;
+}
+function clozeFromText(text){
+  const out=[];
+  const parts=text.split(/[。\.!?！？\n]+/).map(s=>s.trim()).filter(s=>s.length>=6);
+  for(const s of parts){
+    const kw=pickKeyword(s); if(!kw)continue;
+    const front=s.replace(kw,'（　____　）'); if(front===s)continue;
+    out.push([front,kw]);
+  }
+  return out;
+}
+
+/* ----- AI生成（任意・自分のAPIキー・ブラウザから直接Claudeを呼ぶ） ----- */
+function parseAiCards(text){
+  let t=(text||'').trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  let data=null;
+  try{ data=JSON.parse(t); }
+  catch(e){ const m=t.match(/\{[\s\S]*\}/); if(m){try{data=JSON.parse(m[0]);}catch(e2){}} }
+  const arr = data && Array.isArray(data.cards) ? data.cards : (Array.isArray(data)?data:[]);
+  return arr.map(c=>[String((c&&c.front)||'').trim(),String((c&&c.back)||'').trim()]).filter(p=>p[0]||p[1]);
+}
+async function aiThrowIfBad(res){
+  if(res.ok)return;
+  let detail=''; try{ const ej=await res.json(); detail=(ej&&ej.error&&ej.error.message)||''; }catch(_e){}
+  let msg='AIエラー ('+res.status+')';
+  if(res.status===401)msg='APIキーが正しくないようです（⚙️AI設定で確認）';
+  else if(res.status===403)msg='このキーでは使えません。権限や支払い設定（クレジット残高）をご確認ください';
+  else if(res.status===429)msg='回数の制限です。少し待ってからもう一度';
+  else if(res.status===400)msg='リクエストエラー';
+  else if(res.status>=500)msg='サーバー側のエラー。少し待って再度';
+  throw new Error(detail ? (msg+'：'+detail) : msg);
+}
+async function aiGenerateFromImage(dataURL){
+  const key=loadApiKey(); if(!key)throw new Error('NO_KEY');
+  const comma=dataURL.indexOf(',');
+  const b64=dataURL.slice(comma+1);
+  const mt=(dataURL.slice(5,comma).split(';')[0])||'image/jpeg';
+  const prompt='あなたは小中高生の学習を助ける先生です。この画像（教科書・ノート・単語リストなど）から暗記カードを作ってください。各カードは front（覚える語・問い）と back（答え・意味）のペアです。画像内の主要な学習項目を漏れなく、子どもが覚えやすい簡潔な形に。英単語なら front=英語 / back=日本語。社会や理科の用語は front=用語や問い / back=答えや説明。出力は次のJSONのみで、前後に説明やマークダウンを一切付けないこと:\n{"cards":[{"front":"...","back":"..."}]}';
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:loadAiModel(),max_tokens:4000,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mt,data:b64}},
+      {type:'text',text:prompt}
+    ]}]})
+  });
+  await aiThrowIfBad(res);
+  const data=await res.json();
+  const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  return parseAiCards(text);
+}
+async function aiGenerateFromText(srcText){
+  const key=loadApiKey(); if(!key)throw new Error('NO_KEY');
+  const prompt='あなたは小中高生の学習を助ける先生です。次の文章（教科書・プリント・PDF・単語リストなど）から暗記カードを作ってください。各カードは front（覚える語・問い）と back（答え・意味）のペアです。重要な学習項目を漏れなく、子どもが覚えやすい簡潔な形に。英単語なら front=英語 / back=日本語。社会や理科の用語は front=用語や問い / back=答えや説明。出力は次のJSONのみで、前後に説明やマークダウンを一切付けないこと:\n{"cards":[{"front":"...","back":"..."}]}\n\n=== 文章 ===\n'+String(srcText||'').slice(0,12000);
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:loadAiModel(),max_tokens:4000,messages:[{role:'user',content:prompt}]})
+  });
+  await aiThrowIfBad(res);
+  const data=await res.json();
+  const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  return parseAiCards(text);
+}
+async function aigen(){
+  if(!modalState.bulkImage)return;
+  const box=$('#bulkAi');
+  box.innerHTML=`<div class="panel"><div class="mut">✨ AIが問題を作っています…（数秒〜十数秒）</div></div>`;
+  try{
+    const pairs=await aiGenerateFromImage(modalState.bulkImage);
+    if(!pairs.length){box.innerHTML=`<div class="panel"><div class="mut">カードを作れませんでした。写真を変えてお試しを。</div></div>`;return;}
+    $('#bulkText').value=pairs.map(p=>p[0]+'\t'+p[1]).join('\n');
+    modalState.bulkMode='list';
+    if($('#bulkModeSeg'))$$('#bulkModeSeg .segbtn').forEach(x=>x.classList.toggle('on',x.dataset.bmode==='list'));
+    box.innerHTML=`<div class="mut">✅ AIが ${pairs.length}件 作りました。下で確認・修正して「カードを作る」を押してね。</div>`;
+  }catch(e){
+    var m=(e&&e.message)||'エラー';
+    var disp = m==='NO_KEY' ? '⚙️AI設定でAPIキーを登録してください'
+      : /failed to fetch|networkerror|load failed/i.test(m) ? '通信できませんでした。ネット接続、またはブラウザのブロック（CORS）の可能性があります。'
+      : esc(m);
+    box.innerHTML='<div class="panel"><div class="mut">⚠️ '+disp+'</div></div>';
+  }
+}
+
+/* ----- PDFから問題を作る（pdf.js遅延ロード・テキスト抽出＋スキャン時OCR・追加費用なし） ----- */
+let _pdfReady=null;
+function loadPdfJs(){
+  if(_pdfReady)return _pdfReady;
+  _pdfReady=loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js')
+    .then(()=>{ const L=window.pdfjsLib; if(L&&L.GlobalWorkerOptions)L.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js'; return L; })
+    .catch(e=>{_pdfReady=null;throw e;});
+  return _pdfReady;
+}
+async function pdfExtract(file,onProgress){
+  const L=await loadPdfJs();
+  const buf=await file.arrayBuffer();
+  const pdf=await L.getDocument({data:buf}).promise;
+  const maxPages=Math.min(pdf.numPages,50);
+  const pages=[];
+  for(let i=1;i<=maxPages;i++){
+    const page=await pdf.getPage(i);
+    const tc=await page.getTextContent();
+    let out='';
+    for(const it of tc.items){ out+=it.str; out+=(it.hasEOL?'\n':' '); }
+    out=out.replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{2,}/g,'\n').trim();
+    pages.push(out);
+    if(onProgress)onProgress(i/maxPages);
+  }
+  return {pdf, maxPages, numPages:pdf.numPages, text:pages.join('\n'), pages};
+}
+async function pdfRenderOcr(pdf,maxPages,onProgress){
+  const texts=[];
+  for(let i=1;i<=maxPages;i++){
+    const page=await pdf.getPage(i);
+    const vp=page.getViewport({scale:2});
+    const cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
+    await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    const url=cv.toDataURL('image/jpeg',0.85);
+    const t=await runOCR(url,(p)=>{ if(onProgress)onProgress((i-1+p)/maxPages); });
+    texts.push(t);
+  }
+  return texts.join('\n');
+}
+async function handleBulkPdf(file){
+  if(!file)return;
+  const setMsg=(h)=>{ const b=$('#bulkAi'); if(b)b.innerHTML=h; };
+  setMsg('<div class="panel"><div class="mut">📄 PDFを読み込み中… <span id="pdfPct">0%</span><br><span style="font-size:11px">※初回はデータ取得に少し時間（オフライン不可）</span></div></div>');
+  try{
+    const r=await pdfExtract(file,(p)=>{const e=$('#pdfPct');if(e)e.textContent=Math.round(p*100)+'%';});
+    let text=r.text;
+    if(text.replace(/\s/g,'').length<12){
+      const ocrPages=Math.min(r.numPages,8);
+      setMsg('<div class="panel"><div class="mut">🖼️ 画像（スキャン）PDFのようです。文字を読み取り中…（'+ocrPages+'ページ）<span id="pdfPct">0%</span><br><span style="font-size:11px">※ページ数が多いと時間がかかります</span></div></div>');
+      text=await pdfRenderOcr(r.pdf,ocrPages,(p)=>{const e=$('#pdfPct');if(e)e.textContent=Math.round(p*100)+'%';});
+    }
+    const cleaned=text.split('\n').map(s=>s.trim()).filter(Boolean).join('\n');
+    if(!cleaned){ setMsg('<div class="panel"><div class="mut">⚠️ 文字を取り出せませんでした。別のPDFか、写真からの取り込みをお試しください。</div></div>'); return; }
+    if($('#bulkText'))$('#bulkText').value=cleaned;
+    modalState.pdfText=cleaned;
+    const capNote=r.numPages>r.maxPages?'（最初の'+r.maxPages+'ページ）':'';
+    setMsg('<div class="panel"><div class="mut">✅ PDFを読み込みました'+capNote+'（'+r.numPages+'ページ）。下の②で確認・修正して、③の「作る」を押してね。</div></div>');
+  }catch(e){
+    setMsg('<div class="panel"><div class="mut">⚠️ PDFを読み込めませんでした（'+esc((e&&e.message)||'')+'）。通信状況をご確認ください（この機能は初回にデータ取得が必要です）。</div></div>');
+  }
+}
+async function aigenText(){
+  const ta=$('#bulkText');
+  const src=(ta&&ta.value.trim())?ta.value:(modalState.pdfText||'');
+  if(!src||!src.trim()){toast('先にPDFか文章を読み込んでね');return;}
+  const box=$('#bulkAi');
+  if(box)box.innerHTML='<div class="panel"><div class="mut">✨ AIが問題を作っています…（数秒〜十数秒）</div></div>';
+  try{
+    const pairs=await aiGenerateFromText(src);
+    if(!pairs.length){ if(box)box.innerHTML='<div class="panel"><div class="mut">カードを作れませんでした。内容を変えてお試しを。</div></div>'; return; }
+    if($('#bulkText'))$('#bulkText').value=pairs.map(p=>p[0]+'\t'+p[1]).join('\n');
+    modalState.bulkMode='list';
+    if($('#bulkModeSeg'))$$('#bulkModeSeg .segbtn').forEach(x=>x.classList.toggle('on',x.dataset.bmode==='list'));
+    if(box)box.innerHTML='<div class="mut">✅ AIが '+pairs.length+'件 作りました。下で確認・修正して「カードを作る」を押してね。</div>';
+  }catch(e){
+    var m=(e&&e.message)||'エラー';
+    var disp = m==='NO_KEY' ? '⚙️AI設定でAPIキーを登録してください'
+      : /failed to fetch|networkerror|load failed/i.test(m) ? '通信できませんでした。ネット接続、またはブラウザのブロック（CORS）の可能性があります。'
+      : esc(m);
+    if(box)box.innerHTML='<div class="panel"><div class="mut">⚠️ '+disp+'</div></div>';
+  }
+}
+
+/* ----- AIで作る（写真/文章から、選んだ種類＝カード or 穴埋めシートを直接作成） ----- */
+function parseAiCloze(text){
+  let t=(text||'').trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  let data=null; try{data=JSON.parse(t);}catch(e){const m=t.match(/\{[\s\S]*\}/);if(m){try{data=JSON.parse(m[0]);}catch(e2){}}}
+  const arr=data&&Array.isArray(data.items)?data.items:(Array.isArray(data)?data:[]);
+  return arr.map(it=>({sentence:String((it&&it.sentence)||'').trim(),answer:String((it&&it.answer)||'').trim()})).filter(it=>it.sentence&&it.answer);
+}
+function buildClozeFromItems(items){
+  const lines=[],answers=[];
+  (items||[]).forEach(it=>{
+    const s=it.sentence, a=it.answer;
+    if(s.indexOf(a)>=0){ lines.push(s.replace(a,'{{'+answers.length+'}}')); answers.push(a); }
+    else { lines.push(s); }
+  });
+  return {template:lines.join('\n'), answers};
+}
+const AI_CLOZE_PROMPT='あなたは小中高生の学習を助ける先生です。次の内容（教科書・プリント・PDF・写真など）から穴埋め問題を作ってください。各項目は sentence（重要事項を含む一文）と answer（その文の中で空欄にする最重要の語）。answerは必ず sentence の中にそのまま出てくる語にすること。子どもが覚えるべき要点を漏れなく、簡潔に。出力は次のJSONのみで、前後に説明やマークダウンを一切付けないこと:\n{"items":[{"sentence":"...","answer":"..."}]}';
+async function aiClozeFromText(srcText){
+  const key=loadApiKey(); if(!key)throw new Error('NO_KEY');
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:loadAiModel(),max_tokens:4000,messages:[{role:'user',content:AI_CLOZE_PROMPT+'\n\n=== 内容 ===\n'+String(srcText||'').slice(0,12000)}]})});
+  await aiThrowIfBad(res); const data=await res.json();
+  return parseAiCloze((data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n'));
+}
+async function aiClozeFromImage(dataURL){
+  const key=loadApiKey(); if(!key)throw new Error('NO_KEY');
+  const comma=dataURL.indexOf(','); const b64=dataURL.slice(comma+1); const mt=(dataURL.slice(5,comma).split(';')[0])||'image/jpeg';
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:loadAiModel(),max_tokens:4000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:b64}},{type:'text',text:AI_CLOZE_PROMPT}]}]})});
+  await aiThrowIfBad(res); const data=await res.json();
+  return parseAiCloze((data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n'));
+}
+async function bulkmakeai(){
+  if(!loadApiKey()){ toast('⚙️AI設定でAPIキーを登録してね'); return; }
+  const hasImg=!!modalState.bulkImage;
+  const text=($('#bulkText')&&$('#bulkText').value.trim())||'';
+  if(!hasImg && !text){ toast('写真・PDF、または文章を入れてね'); return; }
+  const box=$('#bulkAi'); if(box)box.innerHTML='<div class="panel"><div class="mut">✨ AIが作っています…（数秒〜十数秒）</div></div>';
+  try{
+    let targetDeck=deckById(state.deckId);
+    if(!targetDeck){ targetDeck={id:uid(),name:'写真・PDFからつくった暗記帳',emoji:'📷',color:'sky',cards:[],createdAt:Date.now()}; DECKS.push(targetDeck); }
+    if(modalState.bulkMode==='cloze'){
+      const items=hasImg?await aiClozeFromImage(modalState.bulkImage):await aiClozeFromText(text);
+      const built=buildClozeFromItems(items);
+      if(!built.answers.length){ if(box)box.innerHTML='<div class="panel"><div class="mut">穴埋めを作れませんでした。内容を変えてお試しを。</div></div>'; return; }
+      targetDeck.sheets=targetDeck.sheets||[]; const sid=uid();
+      targetDeck.sheets.push({id:sid,template:built.template,answers:built.answers,createdAt:Date.now()});
+      await idbPut(targetDeck); closeModal(); state.deckId=targetDeck.id; state.sheetId=sid; go('cloze'); toast('✨ AIが穴埋めシートを作ったよ！📝');
+    } else {
+      const pairs=hasImg?await aiGenerateFromImage(modalState.bulkImage):await aiGenerateFromText(text);
+      if(!pairs.length){ if(box)box.innerHTML='<div class="panel"><div class="mut">カードを作れませんでした。内容を変えてお試しを。</div></div>'; return; }
+      for(const p of pairs){ targetDeck.cards.push({id:uid(),front:p[0],back:p[1],hint:'',image:null,box:0}); }
+      await idbPut(targetDeck); closeModal(); state.deckId=targetDeck.id; go('deck'); toast('✨ AIが'+pairs.length+'枚のカードを作ったよ！🎉');
+    }
+  }catch(e){
+    var m=(e&&e.message)||'エラー';
+    var disp = m==='NO_KEY' ? '⚙️AI設定でAPIキーを登録してください'
+      : /failed to fetch|networkerror|load failed/i.test(m) ? '通信できませんでした。ネット接続、またはブラウザのブロック（CORS）の可能性があります。'
+      : esc(m);
+    const b2=$('#bulkAi'); if(b2)b2.innerHTML='<div class="panel"><div class="mut">⚠️ '+disp+'</div></div>';
+  }
+}
+
+/* ----- AI設定（APIキー・モデル） ----- */
+function settingsModal(){
+  const key=loadApiKey(); const model=loadAiModel();
+  const opts=AI_MODELS.map(m=>`<option value="${m[0]}" ${m[0]===model?'selected':''}>${m[1]}</option>`).join('');
+  openModal(`
+    <div class="mh"><h3>✨ AI設定（撮るだけ自動生成）</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="mut" style="margin-bottom:10px">写真からAIが自動で問題を作ります（任意）。<b>あなた自身のAnthropic APIキー</b>を使い、費用はあなたのアカウントにのみかかります（使った分だけの少額課金）。キーは<b>この端末のブラウザにだけ</b>保存され、外部やアプリのコードには出ません。</div>
+      <label class="fld"><span class="lab">🔑 Claude APIキー</span>
+        <input class="input" id="aiKey" type="password" value="${esc(key)}" placeholder="sk-ant-..." autocomplete="off" autocapitalize="off"></label>
+      <label class="fld"><span class="lab">🧠 モデル（品質と料金）</span>
+        <select class="input" id="aiModel">${opts}</select></label>
+      <div class="mut" style="margin-top:8px">キーの取得：Anthropicの管理画面 console.anthropic.com で作成。使い過ぎ防止に上限額の設定もできます。安い順：ふつう ＜ 高品質 ＜ 最高品質。</div>
+      <div class="macts">
+        ${key?'<button class="btn ghost sm" data-action="aiclear">キー削除</button>':''}
+        <button class="btn block teal" data-action="aisave">保存する</button>
+      </div>
+    </div>`);
+}
+function aisave(){ saveApiKey($('#aiKey').value.trim()); saveAiModel($('#aiModel').value); closeModal(); toast('AI設定を保存しました ✨'); }
+function aiclear(){ saveApiKey(''); closeModal(); toast('キーを削除しました'); }
+
+/* ----- デイリーゴール設定 ----- */
+function goalModal(){
+  const g=dailyGoal();
+  const opts=[5,10,15,20,30].map(n=>`<button class="btn ${n===g?'':'ghost'} sm" data-action="goalset" data-goal="${n}">${n}枚</button>`).join('');
+  openModal(`
+    <div class="mh"><h3>🎯 1日の目標</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="mut" style="margin-bottom:12px">1日にやるカードの目標枚数です。むりなく続けられる数に。</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${opts}</div>
+    </div>`);
+}
+function setGoal(n){ const g=parseInt(n,10)||10; META.dailyGoal=g; saveMeta(); closeModal(); go('home'); toast('目標を '+g+'枚 にしました 🎯'); }
+
+/* ----- QR共有・受け取り（テキストのみ・写真は除く） ----- */
+let _qrReady=null;
+function loadQR(){ if(_qrReady)return _qrReady; _qrReady=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=()=>res(window.qrcode);s.onerror=()=>{_qrReady=null;rej(new Error('load'));};document.head.appendChild(s);}); return _qrReady; }
+async function shareQR(){
+  const d=deckById(state.deckId); if(!d)return;
+  const slim={n:d.name,e:d.emoji,co:d.color,c:d.cards.map(c=>[c.front,c.back,c.hint||''])};
+  const url=location.origin+location.pathname+'#d='+b64encUtf8(JSON.stringify(slim));
+  modalState={shareUrl:url};
+  openModal(`<div class="mh"><h3>📲 QRで共有</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="mut" style="margin-bottom:10px">相手のスマホのカメラでこのQRを読み取ると、この暗記帳（カード${d.cards.length}枚）を取り込めます。※写真は共有されません。</div>
+      <div id="qrbox" style="text-align:center;min-height:200px;display:grid;place-items:center">作成中…</div>
+      <button class="btn block ghost sm" data-action="copylink" style="margin-top:12px">🔗 リンクをコピー</button>
+      <div class="mut" style="margin-top:8px">QRが読めないときは「リンクをコピー」して相手に送ってもOK。</div>
+    </div>`);
+  const box=$('#qrbox'); if(!box)return;
+  if(url.length>1800){ box.innerHTML='<div class="mut">カードが多くてQRに収まりません。「リンクをコピー」か、メニューの「書き出し」で共有してください。</div>'; return; }
+  try{
+    const qrcode=await loadQR(); const qr=qrcode(0,'M'); qr.addData(url); qr.make();
+    box.innerHTML='<img alt="QR" src="'+qr.createDataURL(6,8)+'" style="width:230px;height:230px;image-rendering:pixelated;background:#fff;border-radius:8px;padding:6px">';
+  }catch(e){ box.innerHTML='<div class="mut">QRの作成に失敗しました（初回はネット接続が必要）。「リンクをコピー」をお使いください。</div>'; }
+}
+function copylink(){ const u=modalState&&modalState.shareUrl; if(!u){toast('リンクがありません');return;} if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(()=>toast('リンクをコピーしました 🔗')).catch(()=>toast('コピーできませんでした'));}else{toast('この環境ではコピー非対応です');} }
+function importConfirmModal(slim){
+  const n=((slim&&slim.c)||[]).length;
+  openModal(`<div class="mh"><h3>📥 暗記帳を読み込む</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div style="font-weight:800;font-size:16px;margin-bottom:6px">${esc((slim&&slim.e)||'📘')} ${esc((slim&&slim.n)||'暗記帳')}</div>
+      <div class="mut" style="margin-bottom:14px">カード ${n}枚 を あなたの「パシャ暗記」に追加します。よろしいですか？</div>
+      <button class="btn block teal" data-action="doimport">この暗記帳を取り込む</button>
+    </div>`);
+  modalState={importSlim:slim};
+}
+async function doImport(){
+  const slim=modalState&&modalState.importSlim; if(!slim)return;
+  const d={id:uid(),name:slim.n||'読み込んだ暗記帳',emoji:slim.e||'📘',color:slim.co||'sky',createdAt:Date.now(),cards:((slim.c)||[]).map(a=>({id:uid(),front:(a&&a[0])||'',back:(a&&a[1])||'',hint:(a&&a[2])||'',image:null,box:0}))};
+  DECKS.push(d); await idbPut(d); closeModal(); go('home'); toast('「'+d.name+'」を取り込みました 🎉');
+}
+
+/* ----- 画像トリミング（端末内・モーダル内で完結） ----- */
+function cropInline(container, src, onApply){
+  if(!container)return;
+  container.innerHTML=`
+    <div class="mut" style="margin-bottom:8px">わくをドラッグで移動／右下で大きさ調整</div>
+    <div id="cropWrap" style="position:relative;touch-action:none;user-select:none;max-width:100%;margin:0 auto;line-height:0;border-radius:12px;overflow:hidden;background:#0003">
+      <img id="cropImg" src="${src}" style="display:block;width:100%;pointer-events:none">
+      <div id="cropRect" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 3000px rgba(0,0,0,.5);box-sizing:border-box">
+        <div style="position:absolute;right:-12px;bottom:-12px;width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid var(--pink)"></div>
+      </div>
+    </div>
+    <div class="photo-actions" style="margin-top:10px">
+      <button class="btn sm teal" id="cropDo">✂️ 切り抜く</button>
+      <button class="btn ghost sm" id="cropCancel">↩︎ もどる</button>
+    </div>`;
+  const wrap=container.querySelector('#cropWrap'), img=container.querySelector('#cropImg'), r=container.querySelector('#cropRect');
+  let w=0,h=0,rx=0,ry=0,rw=0,rh=0,mode=null,sx=0,sy=0,ox=0,oy=0,ow=0,oh=0;
+  function draw(){r.style.left=rx+'px';r.style.top=ry+'px';r.style.width=rw+'px';r.style.height=rh+'px';}
+  function setup(){ w=img.clientWidth;h=img.clientHeight; if(!w){setTimeout(setup,60);return;} rx=w*0.08;ry=h*0.08;rw=w*0.84;rh=h*0.84; draw(); }
+  function pt(e){const b=wrap.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top};}
+  wrap.addEventListener('pointerdown',e=>{const p=pt(e);
+    const nearH=(p.x>rx+rw-32&&p.y>ry+rh-32);
+    const inside=(p.x>=rx&&p.x<=rx+rw&&p.y>=ry&&p.y<=ry+rh);
+    if(nearH)mode='resize'; else if(inside)mode='move'; else return;
+    sx=p.x;sy=p.y;ox=rx;oy=ry;ow=rw;oh=rh; try{wrap.setPointerCapture(e.pointerId);}catch(_){} e.preventDefault();
+  });
+  wrap.addEventListener('pointermove',e=>{ if(!mode)return; const p=pt(e),dx=p.x-sx,dy=p.y-sy;
+    if(mode==='move'){rx=Math.max(0,Math.min(w-rw,ox+dx));ry=Math.max(0,Math.min(h-rh,oy+dy));}
+    else{rw=Math.max(30,Math.min(w-rx,ow+dx));rh=Math.max(30,Math.min(h-ry,oh+dy));} draw();
+  });
+  wrap.addEventListener('pointerup',()=>{mode=null;});
+  container.querySelector('#cropDo').addEventListener('click',()=>{
+    const im=new Image();
+    im.onload=()=>{ if(!w){onApply(null);return;} const scx=im.naturalWidth/w, scy=im.naturalHeight/h;
+      const cw=Math.max(1,Math.round(rw*scx)), ch=Math.max(1,Math.round(rh*scy));
+      const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+      cv.getContext('2d').drawImage(im,Math.round(rx*scx),Math.round(ry*scy),cw,ch,0,0,cw,ch);
+      onApply(cv.toDataURL('image/jpeg',0.82));
+    };
+    im.onerror=()=>onApply(null); im.src=src;
+  });
+  container.querySelector('#cropCancel').addEventListener('click',()=>onApply(null));
+  if(img.complete&&img.clientWidth)setup(); else img.addEventListener('load',setup);
+}
+
+/* ----- 聞き流しモード（自動で読み上げ） ----- */
+let listenToken=0;
+function startListen(){
+  const d=deckById(state.deckId); if(!d)return; const opts=state.studyOpts||{};
+  let pool=opts.weak?d.cards.filter(c=>(c.box||0)<MASTER_BOX):d.cards.slice();
+  if(!pool.length){toast(opts.weak?'にがてカードはありません🎉':'カードがありません');return;}
+  state.session={mode:'listen',cards:shuffle(pool),idx:0,correct:0,wrong:0,deckIds:[state.deckId],review:false,reverse:!!opts.reverse,phase:'q',paused:false};
+  go('listen');
+}
+function viewListen(){
+  const s=state.session;const card=s.cards[s.idx];
+  return `<div class="study">
+    <div class="study-top">
+      <button class="iconbtn" data-action="open" data-id="${state.deckId}">✕</button>
+      <div class="progress"><i style="width:${s.idx/s.cards.length*100}%"></i></div>
+      <span class="study-count">${s.idx+1}/${s.cards.length}</span>
+    </div>
+    <div class="qbig" style="min-height:220px;display:grid;place-items:center">
+      <div>
+        <div class="ask">🎧 聞き流し中…</div>
+        <div class="q" id="listenQ" style="margin:12px 0">${esc(qSide(card))}</div>
+        <div class="big" id="listenA" style="font-family:var(--font-display);color:var(--teal-d);min-height:1.4em">${s.phase==='a'?esc(aSide(card)):''}</div>
+      </div>
+    </div>
+    <div class="judge">
+      <button class="btn ghost" data-action="listentoggle">${s.paused?'▶ さいせい':'⏸ いちじ停止'}</button>
+      <button class="btn ghost" data-action="open" data-id="${state.deckId}">やめる</button>
+    </div>
+  </div>`;
+}
+/* listenDur は廃止: 読み上げ完了(onend)で次へ進むため固定時間は不要 */
+function paintListen(){
+  const s=state.session; if(!s||s.mode!=='listen')return; const card=s.cards[s.idx]; if(!card)return;
+  const c=$('.study-count'); if(c)c.textContent=(s.idx+1)+'/'+s.cards.length;
+  const p=$('.progress i'); if(p)p.style.width=(s.idx/s.cards.length*100)+'%';
+  const q=$('#listenQ'); if(q)q.textContent=qSide(card);
+  const a=$('#listenA'); if(a)a.textContent=(s.phase==='a')?aSide(card):'';
+}
+function wireListen(){ listenToken++; const my=listenToken; listenTick(my); }
+function listenTick(tok){
+  if(tok!==listenToken)return; const s=state.session; if(!s||s.mode!=='listen'||s.paused)return;
+  if(s.idx>=s.cards.length){ finishListen(); return; }
+  const card=s.cards[s.idx];
+  const qt=ttsClean(qSide(card)), at=ttsClean(aSide(card));
+  const guard=()=> (tok===listenToken && !s.paused);
+  s.phase='q'; paintListen();
+  try{speechSynthesis.cancel();}catch(_){}
+  speakChunks(qt, ()=>{                 // 問題：1回目
+    if(!guard())return;
+    setTimeout(()=>{                    // 少し間をあけて
+      if(!guard())return;
+      speakChunks(qt, ()=>{             // 問題：2回目（反復）
+        if(!guard())return;
+        setTimeout(()=>{
+          if(!guard())return;
+          s.phase='a'; paintListen();
+          speakChunks(at, ()=>{         // 答え：1回目
+            if(!guard())return;
+            setTimeout(()=>{            // 少し間をあけて
+              if(!guard())return;
+              speakChunks(at, ()=>{     // 答え：2回目（反復）
+                if(!guard())return;
+                setTimeout(()=>{ if(!guard())return; s.idx++; listenTick(tok); }, 800);
+              });
+            }, REPEAT_GAP);
+          });
+        }, 500);
+      });
+    }, REPEAT_GAP);
+  });
+}
+function finishListen(){
+  const s=state.session; const n=s?s.cards.length:0;
+  bumpStreak(); META.totalReviews=(META.totalReviews||0)+n; saveMeta(); addStudyCount(n);
+  toast('聞き流し かんりょう！🎧'); go('deck');
+}
+
+/* ====== クラウド同期（任意・Supabase。設定はこの端末に保存・写真とAPIキーは同期しない） ====== */
+let _sbReady=null,_sb=null,_syncChs={},_syncApplying=false,_syncTimer=null,syncStatus='off';
+function syncUrl(){ return (localStorage.getItem('pasha-sync-url')||'').replace(/\/+$/,''); }
+function syncKey(){ return localStorage.getItem('pasha-sync-key')||''; }
+function syncCode(){ return localStorage.getItem('pasha-sync-code')||''; }            // 自分用スペースの合言葉
+function syncSharedCode(){ return localStorage.getItem('pasha-sync-shared')||''; }     // 家族共有スペースの合言葉
+function syncOn(){ return localStorage.getItem('pasha-sync-on')==='1' && !!syncUrl() && !!syncKey() && (!!syncCode()||!!syncSharedCode()); }
+function syncSpaces(){ const sp=[]; if(syncCode())sp.push({kind:'personal',code:syncCode()}); if(syncSharedCode())sp.push({kind:'shared',code:syncSharedCode()}); return sp; }
+function isSharedDeck(d){ return !!(d&&d.shared); }
+function deviceId(){ let d=localStorage.getItem('pasha-device'); if(!d){d='dv'+Math.random().toString(36).slice(2,10); try{localStorage.setItem('pasha-device',d);}catch(e){}} return d; }
+function loadScript(src){ return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('読込失敗'));document.head.appendChild(s);}); }
+function loadSupabase(){ if(_sbReady)return _sbReady; _sbReady=loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2').then(()=>window.supabase).catch(e=>{_sbReady=null;throw e;}); return _sbReady; }
+async function startSync(){
+  if(!syncOn())return;
+  try{
+    const lib=await loadSupabase();
+    _sb=lib.createClient(syncUrl(), syncKey());
+    stopChannels();
+    const spaces=syncSpaces();
+    for(const sp of spaces){
+      const {data:row,error}=await _sb.from('families').select('data,updated_by').eq('code',sp.code).maybeSingle();
+      if(error)throw error;
+      if(row&&row.data){ await applyRemoteSpace(sp.kind, row.data, true); }
+    }
+    await pushNow();
+    for(const sp of spaces){
+      const kind=sp.kind, code=sp.code;
+      _syncChs[code]=_sb.channel('fam-'+code)
+        .on('postgres_changes',{event:'*',schema:'public',table:'families',filter:'code=eq.'+code}, payload=>{
+          const r=payload&&payload.new; if(!r||r.updated_by===deviceId())return; if(r.data)applyRemoteSpace(kind, r.data, false);
+        }).subscribe();
+    }
+    syncStatus='接続中'; toast('クラウド同期：接続しました ☁️');
+  }catch(e){ syncStatus='エラー：'+((e&&e.message)||''); toast('同期エラー：URL/キー/テーブル設定をご確認ください'); }
+}
+function stopChannels(){ if(_sb){ for(const k in _syncChs){ try{_sb.removeChannel(_syncChs[k]);}catch(e){} } } _syncChs={}; }
+function stopSync(){ stopChannels(); _sb=null; syncStatus='off'; }
+function normalizeDeck(d, isShared, imgMap){
+  return {id:d.id,name:d.name||'',emoji:d.emoji||'📘',color:d.color||'pink',createdAt:d.createdAt||Date.now(),shared:!!isShared,
+    cards:((d.cards)||[]).map(c=>({id:c.id,front:c.front||'',back:c.back||'',hint:c.hint||'',box:c.box||0,last:c.last||0,image:(c.image||imgMap[c.id]||null)})),
+    sheets:((d.sheets)||[]).map(s=>({id:s.id,template:s.template||'',answers:(s.answers)||[],createdAt:s.createdAt||0}))};
+}
+async function applyRemoteSpace(kind, data, merge){
+  _syncApplying=true; let needRepush=false;
+  try{
+    const isShared=(kind==='shared');
+    // 削除マーク（tombstone）を統合：どちらかで消したものは消えたまま
+    const rdel=(data&&data.del)||{}; META.delDecks=META.delDecks||{};
+    for(const id in rdel){ if(!(id in META.delDecks)||rdel[id]>META.delDecks[id]) META.delDecks[id]=rdel[id]; }
+    const tomb=META.delDecks;
+    const imgMap={}; DECKS.forEach(d=>d.cards.forEach(c=>{ if(c.image)imgMap[c.id]=c.image; }));
+    let remoteDecks=((data.decks)||[]).map(d=>normalizeDeck(d,isShared,imgMap));
+    if(remoteDecks.some(d=>tomb[d.id])) needRepush=true;     // 相手が削除済みデッキを持っていた→削除を再送して直す
+    remoteDecks=remoteDecks.filter(d=>!tomb[d.id]);          // 削除済みは取り込まない
+    const rid=new Set(remoteDecks.map(d=>d.id));
+    const otherSpace=DECKS.filter(d=> isShared ? !isSharedDeck(d) : isSharedDeck(d) );   // 別スペースのデッキは温存
+    const kept = merge ? DECKS.filter(d=> (isShared?isSharedDeck(d):!isSharedDeck(d)) && !rid.has(d.id) && !tomb[d.id]) : []; // 初回接続：ローカル分も残す（削除済みは除く）
+    DECKS = otherSpace.concat(remoteDecks, kept);
+    if(!isShared && data.meta){ const m=data.meta; META.streak=m.streak||0; META.lastDay=m.lastDay||''; META.totalReviews=m.totalReviews||0; META.dailyGoal=m.dailyGoal||META.dailyGoal||10; META.history=m.history||{}; META.accHist=m.accHist||META.accHist||{}; }
+    saveMeta();
+    for(const d of remoteDecks){ await idbPut(d); }
+    for(const id in tomb){ try{ tx('readwrite').delete(id); }catch(e){} } // 削除済みはローカルDBからも消す
+    if(state.view==='home'||state.view==='deck'||state.view==='report')render();
+  }catch(e){} finally{ _syncApplying=false; }
+  if(needRepush){ try{ pushNow(); }catch(e){} } // 削除を相手にも反映させる
+}
+function scheduleSync(){ if(!syncOn()||_syncApplying||!_sb)return; clearTimeout(_syncTimer); _syncTimer=setTimeout(pushNow,1200); }
+function serializeDeck(d){ return {id:d.id,name:d.name||'',emoji:d.emoji||'📘',color:d.color||'pink',createdAt:d.createdAt||0,cards:((d.cards)||[]).map(c=>({id:c.id,front:c.front||'',back:c.back||'',hint:c.hint||'',box:c.box||0,last:c.last||0,image:c.image||null})),sheets:((d.sheets)||[]).map(s=>({id:s.id,template:s.template||'',answers:(s.answers)||[],createdAt:s.createdAt||0}))}; }
+function serializeMeta(){ return {streak:META.streak||0,lastDay:META.lastDay||'',totalReviews:META.totalReviews||0,dailyGoal:META.dailyGoal||10,history:META.history||{},accHist:META.accHist||{}}; }
+async function pushNow(){
+  if(!_sb||!syncOn())return;
+  try{
+    for(const sp of syncSpaces()){
+      const isShared=(sp.kind==='shared');
+      const decks=DECKS.filter(d=> isShared?isSharedDeck(d):!isSharedDeck(d) ).map(serializeDeck);
+      const data = isShared ? {decks, del:META.delDecks||{}} : {decks, meta:serializeMeta(), del:META.delDecks||{}};
+      const {error}=await _sb.from('families').upsert({code:sp.code,data,updated_by:deviceId(),updated_at:Date.now()});
+      if(error)syncStatus='エラー：'+(error.message||'');
+    }
+  }catch(e){ syncStatus='エラー：'+((e&&e.message)||''); }
+}
+function parseFbConfig(text){ try{ const m=String(text).match(/\{[\s\S]*\}/); if(!m)return null; return (new Function('return ('+m[0]+')'))(); }catch(e){ return null; } }
+function syncSettingsModal(){
+  const url=syncUrl(); const key=syncKey(); const code=syncCode(); const shared=syncSharedCode(); const on=syncOn();
+  openModal(`<div class="mh"><h3>☁️ クラウド同期</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="mut" style="margin-bottom:10px">複数の端末を自動で同期します（任意）。<b>あなた自身の無料Supabase</b>を使い、データ（カードの文字・学習記録）はそこに保存されます。<b>写真とAPIキーは同期しません</b>。同じURL・キー＋同じ「家族コード」を入れた端末どうしが同期します。${on?'<br><b style="color:var(--teal-d)">現在：同期オン（'+esc(syncStatus)+'）</b>':''}</div>
+      <label class="fld"><span class="lab">🔗 Project URL（Supabase → Settings → API）</span>
+        <input class="input" id="syncUrl" value="${esc(url)}" placeholder="https://xxxx.supabase.co" autocomplete="off"></label>
+      <label class="fld"><span class="lab">🔑 anon public キー</span>
+        <textarea class="ta" id="syncKey" style="min-height:80px;font-size:12px" placeholder="eyJhbGci...（anon public key）">${esc(key)}</textarea></label>
+      <label class="fld"><span class="lab">🔒 あなた専用の合言葉（自分の端末どうしで同じ）</span>
+        <div style="display:flex;gap:8px"><input class="input" id="syncCode" value="${esc(code)}" placeholder="例：me-xxxx..." autocomplete="off"><button class="btn ghost sm" data-action="synccoderand">ランダム</button></div></label>
+      <label class="fld"><span class="lab">👨‍👩‍👧 家族共有の合言葉（家族みんなで同じ・任意）</span>
+        <div style="display:flex;gap:8px"><input class="input" id="syncShared" value="${esc(shared)}" placeholder="例：fam-xxxx...（共有しないなら空でOK）" autocomplete="off"><button class="btn ghost sm" data-action="synccoderandshared">ランダム</button></div></label>
+      <div class="mut" style="margin-top:8px">※合言葉は「部屋のカギ」です。<b>専用</b>はあなたの端末だけ同じに、<b>家族共有</b>は家族全員で同じ文字にします。推測されにくい長めのものに（「ランダム」推奨）。単語帳ごとに「自分用／家族共有」を切り替えられます。</div>
+      <div class="mut" style="margin-top:8px;font-size:11px">この端末のバージョン：<b>${APP_VER}</b>（写真の同期はv31以降。家族の端末も同じ版にしてね）</div>
+      ${on?'<button class="btn block ghost" data-action="syncpush" style="margin-top:10px">🔄 今すぐ同期（この端末の内容を写真ごとアップロード）</button>':''}
+      ${(on&&shared)?'<button class="btn block ghost" data-action="syncinvite" style="margin-top:8px">👨‍👩‍👧 家族を招待（リンクをコピー）</button>':''}
+      <div class="macts">
+        ${on?'<button class="btn ghost sm" data-action="syncoff">同期を解除</button>':''}
+        <button class="btn block teal" data-action="syncsave">${on?'更新して再接続':'同期を有効にする'}</button>
+      </div>
+    </div>`);
+}
+function synccoderand(){ const el=$('#syncCode'); if(el)el.value='me-'+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,8); }
+function synccoderandshared(){ const el=$('#syncShared'); if(el)el.value='fam-'+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,8); }
+async function syncSave(){
+  const url=$('#syncUrl').value.trim(); const key=$('#syncKey').value.trim(); const code=$('#syncCode').value.trim(); const shared=($('#syncShared')?$('#syncShared').value.trim():'');
+  if(!/^https:\/\/.+\.supabase\.co/.test(url)){ toast('Project URL を確認（https://xxxx.supabase.co）'); return; }
+  if(!key){ toast('anon public キーを入れてね'); return; }
+  if(!code&&!shared){ toast('合言葉を入れてね（専用か共有のどちらか）'); return; }
+  try{ localStorage.setItem('pasha-sync-url',url); localStorage.setItem('pasha-sync-key',key); localStorage.setItem('pasha-sync-code',code); localStorage.setItem('pasha-sync-shared',shared); localStorage.setItem('pasha-sync-on','1'); }catch(e){}
+  stopSync(); closeModal(); toast('同期を有効にしました ☁️'); startSync();
+}
+function syncOff(){ try{localStorage.setItem('pasha-sync-on','');}catch(e){} stopSync(); closeModal(); toast('同期を解除しました'); }
+function syncInvite(){
+  const cfg={u:syncUrl(),k:syncKey(),c:syncSharedCode()};
+  if(!cfg.u||!cfg.k||!cfg.c){ toast('先に家族共有の合言葉を設定してね'); return; }
+  const link=location.origin+location.pathname+'#join='+b64encUtf8(JSON.stringify(cfg));
+  openModal(`<div class="mh"><h3>👨‍👩‍👧 家族を招待</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <div class="mut" style="margin-bottom:10px">下のリンクを<b>家族のLINEなど</b>に送ってください。受け取った人がタップして「つなぐ」を押すと、家族みんなの暗記帳（福岡検定など）がそのまま使えます。<br><b style="color:var(--pink-d)">※家族だけに送ってね（家族の合言葉が入っています）。</b></div>
+      <textarea class="ta" id="inviteLink" readonly style="min-height:120px;font-size:12px" onclick="this.select()">${esc(link)}</textarea>
+      <button class="btn block teal" data-action="invitecopy" style="margin-top:10px">📋 リンクをコピー</button>
+    </div>`);
+}
+
+/* ----- menu (export/import/sample) ----- */
+function menuModal(){
+  openModal(`
+    <div class="mh"><h3>⚙️ メニュー</h3><button class="iconbtn" data-action="closeModal">✕</button></div>
+    <div class="mb">
+      <button class="btn block teal" data-action="photoBulk0" style="margin-bottom:12px">📷📄 写真・PDFから問題を作る</button>
+      <button class="btn block ghost" data-action="report" style="margin-bottom:12px">📊 学習の記録（にがて・正答率）</button>
+      <hr class="dash">
+      <div class="mut" style="margin-bottom:10px">暗記帳のデータをファイルに保存（バックアップ）したり、そのファイルから戻したりできます。機種変更や、他の人へわたすときに。</div>
+      <button class="btn block ghost" data-action="export" style="margin-bottom:10px">📤 暗記帳を書き出す（バックアップ保存）</button>
+      <button class="btn block ghost" data-action="import" style="margin-bottom:10px">📥 暗記帳を読み込む（書き出したファイルから）</button>
+      <hr class="dash">
+      <button class="btn block ghost" data-action="aisettings" style="margin-bottom:10px">✨ AI設定（撮るだけ自動生成）</button>
+      <button class="btn block ghost" data-action="voicesettings" style="margin-bottom:10px">🔊 音声設定（声をえらぶ）</button>
+      <button class="btn block ghost" data-action="toggletheme" style="margin-bottom:10px">${META.theme==='dark'?'☀️ ライトモードにする':'🌙 ダークモードにする'}</button>
+      <button class="btn block ghost" data-action="syncsettings" style="margin-bottom:10px">☁️ クラウド同期${syncOn()?'（オン）':''}</button>
+      <div class="mut center" style="margin-top:16px">パシャ暗記 ${APP_VER} ・ 写真でおぼえる暗記アプリ</div>
+    </div>`);
+}
+function exportData(){
+  const data={app:'sugoi-anki',version:1,exportedAt:new Date().toISOString(),decks:DECKS};
+  const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='pasha-anki-backup.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('書き出しました 📤');
+}
+async function importData(file){
+  try{
+    const text=await file.text();const data=JSON.parse(text);
+    const incoming=Array.isArray(data)?data:(data.decks||[]);
+    if(!incoming.length){toast('暗記帳が見つかりませんでした');return;}
+    let added=0;
+    for(const d of incoming){
+      d.id=d.id&&!deckById(d.id)?d.id:uid();
+      d.cards=(d.cards||[]).map(c=>({id:c.id||uid(),front:c.front||'',back:c.back||'',hint:c.hint||'',image:c.image||null,box:c.box||0}));
+      DECKS.push(d);await idbPut(d);added++;
+    }
+    closeModal();go('home');toast(added+'この暗記帳を読み込みました 🎉');
+  }catch(e){toast('読み込みに失敗しました');}
+}
+
+/* =========================================================
+   CONFETTI 🎉
+   ========================================================= */
+let cf={c:null,ctx:null,parts:[],raf:0};
+function initConfetti(){
+  cf.c=$('#confetti');cf.ctx=cf.c.getContext('2d');resizeCf();
+  window.addEventListener('resize',resizeCf);
+}
+function resizeCf(){if(!cf.c)return;cf.c.width=innerWidth;cf.c.height=innerHeight;}
+function burst(x=0.5,y=0.4,count=90){
+  const cols=['#FF6F8F','#1FC3B0','#FFC23C','#54C4F2','#A98BF0','#8BC53F'];
+  for(let i=0;i<count;i++){
+    cf.parts.push({x:cf.c.width*x,y:cf.c.height*y,
+      vx:(Math.random()-0.5)*12,vy:(Math.random()*-12-4),
+      g:0.35+Math.random()*0.2,s:6+Math.random()*7,
+      col:cols[i%cols.length],rot:Math.random()*6,vr:(Math.random()-0.5)*0.4,life:60+Math.random()*40});
+  }
+  if(!cf.raf)stepCf();
+}
+function stepCf(){
+  const {ctx,c}=cf;ctx.clearRect(0,0,c.width,c.height);
+  cf.parts=cf.parts.filter(p=>p.life>0);
+  for(const p of cf.parts){
+    p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.life--;p.vx*=0.99;
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.col;ctx.globalAlpha=Math.min(1,p.life/30);
+    ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6);ctx.restore();
+  }
+  if(cf.parts.length)cf.raf=requestAnimationFrame(stepCf);else{cf.raf=0;ctx.clearRect(0,0,c.width,c.height);}
+}
+
+/* =========================================================
+   MASCOT (inline SVG)  — まる文字えんぴつくん
+   ========================================================= */
+function mascotSVG(size=64,mood='normal'){
+  const happy = mood!=='normal';
+  return `<svg class="mascot" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="50" cy="90" rx="26" ry="5" fill="#000" opacity=".08"/>
+    <rect x="30" y="14" width="40" height="62" rx="20" fill="#FFD86B"/>
+    <rect x="30" y="14" width="40" height="14" rx="13" fill="#FF9FB3"/>
+    <path d="M30 64 q20 14 40 0 v-2 q-20 12 -40 0z" fill="#F2B33D"/>
+    <path d="M34 72 l16 16 16-16 q-16 10 -32 0z" fill="#F6D7A6"/>
+    <path d="M44 80 l6 8 6-8z" fill="#5B4636"/>
+    <circle cx="42" cy="44" r="4.4" fill="#3B362E"/>
+    <circle cx="58" cy="44" r="4.4" fill="#3B362E"/>
+    <circle cx="43.4" cy="42.6" r="1.5" fill="#fff"/>
+    <circle cx="59.4" cy="42.6" r="1.5" fill="#fff"/>
+    ${happy
+      ? '<path d="M42 52 q8 8 16 0" stroke="#3B362E" stroke-width="3" stroke-linecap="round" fill="none"/>'
+      : '<path d="M44 53 q6 4 12 0" stroke="#3B362E" stroke-width="3" stroke-linecap="round" fill="none"/>'}
+    <circle cx="36" cy="51" r="3.4" fill="#FF9FB3" opacity=".7"/>
+    <circle cx="64" cy="51" r="3.4" fill="#FF9FB3" opacity=".7"/>
+    ${happy?'<path d="M16 30 l3 6 6 3 -6 3 -3 6 -3-6 -6-3 6-3z" fill="#FFC23C"/><path d="M80 20 l2 4 4 2 -4 2 -2 4 -2-4 -4-2 4-2z" fill="#54C4F2"/>':''}
+  </svg>`;
+}
+
+/* =========================================================
+   EVENT DELEGATION
+   ========================================================= */
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-action]');if(!t)return;
+  const a=t.dataset.action;const id=t.dataset.id;
+  switch(a){
+    case 'home': go('home');break;
+    case 'review': startReview();break;
+    case 'report': go('report');break;
+    case 'weakreview': startWeakReview();break;
+    case 'printdeck': printModal('deck');break;
+    case 'printcloze': printModal('cloze');break;
+    case 'doprint': { closeModal(); if(t.dataset.kind==='cloze')printCloze(state.deckId,state.sheetId,t.dataset.ans==='1'); else printDeck(state.deckId,t.dataset.ans==='1'); break; }
+    case 'optrev': (state.studyOpts=state.studyOpts||{}).reverse=(t.dataset.v==='1');render();break;
+    case 'optweak': (state.studyOpts=state.studyOpts||{}).weak=(t.dataset.v==='1');render();break;
+    case 'shareqr': shareQR();break;
+    case 'copylink': copylink();break;
+    case 'doimport': doImport();break;
+    case 'toggletheme': toggleTheme();break;
+    case 'cropcard': if(modalState.card&&modalState.card.image)cropInline($('#photobox'),modalState.card.image,out=>{if(out)modalState.card.image=out;refreshPhotoBox();});break;
+    case 'cropbulk': if(modalState.bulkImage)cropInline($('#bulkPhoto'),modalState.bulkImage,out=>{if(out)modalState.bulkImage=out;refreshBulkPhoto();});break;
+    case 'listen': startListen();break;
+    case 'listentoggle': if(state.session){state.session.paused=!state.session.paused;stopSpeak();render();}break;
+    case 'syncsettings': syncSettingsModal();break;
+    case 'syncsave': syncSave();break;
+    case 'syncpush': (async()=>{ if(!syncOn()){toast('先に同期をオンにしてね');return;} toast('アップロード中… ☁️'); try{ await pushNow(); toast('この端末の内容をアップロードしました ☁️'); }catch(e){ toast('アップロードに失敗しました'); } })();break;
+    case 'syncoff': syncOff();break;
+    case 'syncinvite': syncInvite();break;
+    case 'invitecopy': { const el=$('#inviteLink'); if(el){ el.focus(); el.select(); try{ navigator.clipboard.writeText(el.value); }catch(e){} try{ document.execCommand('copy'); }catch(e){} toast('コピーしました 📋 LINEなどに貼り付けてね'); } break; }
+    case 'synccoderand': synccoderand();break;
+    case 'synccoderandshared': synccoderandshared();break;
+    case 'speak': speak(t.dataset.text);break;
+    case 'voicesettings': voiceModal();break;
+    case 'voicetest': speakSample(t.dataset.l==='ja', (t.dataset.l==='ja'?$('#voiceJa'):$('#voiceEn')).value);break;
+    case 'setgoal': goalModal();break;
+    case 'goalset': setGoal(t.dataset.goal);break;
+    case 'open': state.deckId=id;go('deck');break;
+    case 'deck': go('deck');break;
+    case 'clozeopen': state.sheetId=id;go('cloze');break;
+    case 'clozedel': clozeDel(id);break;
+    case 'clozeblank': { const on=t.classList.toggle('on'); t.textContent=on?(t.dataset.ans||'？'):'？'; break; }
+    case 'clozeshowall': $$('.cloze-blank').forEach(b=>{b.classList.add('on');b.textContent=b.dataset.ans||'？';});break;
+    case 'clozehideall': $$('.cloze-blank').forEach(b=>{b.classList.remove('on');b.textContent='？';});break;
+    case 'newdeck': deckModal(null);break;
+    case 'newshareddeck': deckModal(null,{shared:true});break;
+    case 'editdeck': deckModal(deckById(id||state.deckId));break;
+    case 'savedeck': savedeck();break;
+    case 'deldeck': deldeck();break;
+    case 'addcard': addChooserModal();break;
+    case 'newcard': cardModal(null);break;
+    case 'editcard': cardModal(deckById(state.deckId).cards.find(c=>c.id===id));break;
+    case 'savecard': savecard();break;
+    case 'delcard': delcard();break;
+    case 'closeModal': closeModal();break;
+    case 'start': startSession(t.dataset.mode);break;
+    case 'restart': (state.session&&state.session.review)?startReview():startSession(state.session.mode);break;
+    case 'qnext': qnext();break;
+    case 'typecheck': typecheck();break;
+    case 'typenext': typeNext();break;
+    case 'typeforgive': typeforgive();break;
+    case 'cam': triggerFile('fileCam',handlePhoto);break;
+    case 'pick': triggerFile('filePick',handlePhoto);break;
+    case 'rmphoto': modalState.card.image=null;refreshPhotoBox();break;
+    case 'ocr': ocrToCard();break;
+    case 'aigencard': aigenCard();break;
+    case 'photoBulk0': bulkModal();break;
+    case 'photoBulk1': bulkModal();break;
+    case 'bcam': triggerFile('fileCam',handleBulkPhoto);break;
+    case 'bpick': triggerFile('filePick',handleBulkPhoto);break;
+    case 'bpdf': triggerFile('filePdf',handleBulkPdf);break;
+    case 'bocr': bocr();break;
+    case 'aigentext': aigenText();break;
+    case 'brm': modalState.bulkImage=null;refreshBulkPhoto();break;
+    case 'aigen': aigen();break;
+    case 'bulkmake': bulkmake();break;
+    case 'bulkmakeai': bulkmakeai();break;
+    case 'aisettings': settingsModal();break;
+    case 'aisave': aisave();break;
+    case 'aiclear': aiclear();break;
+    case 'menu': menuModal();break;
+    case 'export': exportData();break;
+    case 'import': triggerFile('fileImport',importData);break;
+  }
+});
+
+let _fileCb=null;
+function triggerFile(inputId,cb){const inp=$('#'+inputId);_fileCb=cb;inp.value='';inp.click();}
+['fileCam','filePick','fileImport','filePdf'].forEach(idn=>{
+  $('#'+idn).addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f&&_fileCb)_fileCb(f);});
+});
+
+/* =========================================================
+   Service worker（オフライン対応・https/localhost のときだけ登録）
+   ========================================================= */
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
+
+/* キーボード表示時にモーダル下部のボタンが隠れないよう、見える領域の高さを反映 */
+function fitViewport(){var h=(window.visualViewport?window.visualViewport.height:window.innerHeight);document.documentElement.style.setProperty('--appvh',h+'px');}
+if(window.visualViewport){window.visualViewport.addEventListener('resize',fitViewport);window.visualViewport.addEventListener('scroll',fitViewport);}
+window.addEventListener('resize',fitViewport);window.addEventListener('orientationchange',fitViewport);fitViewport();
+
+/* =========================================================
+   INIT
+   ========================================================= */
+function maybeImportFromHash(){
+  const h=location.hash||'';
+  if(h.indexOf('#d=')!==0)return;
+  try{ pendingImport=JSON.parse(b64decUtf8(h.slice(3))); }catch(e){}
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){ location.hash=''; }
+}
+function maybeJoinFromHash(){
+  const h=location.hash||'';
+  if(h.indexOf('#join=')!==0)return;
+  let cfg=null;
+  try{ cfg=JSON.parse(b64decUtf8(h.slice(6))); }catch(e){}
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){ location.hash=''; }
+  if(!cfg||!cfg.u||!cfg.k)return;
+  if(!confirm('家族の暗記帳につなぎます。よろしいですか？\n（共有された問題が自動で入ります）'))return;
+  try{
+    localStorage.setItem('pasha-sync-url',cfg.u);
+    localStorage.setItem('pasha-sync-key',cfg.k);
+    if(cfg.c)localStorage.setItem('pasha-sync-shared',cfg.c);
+    localStorage.setItem('pasha-sync-on','1');
+  }catch(e){}
+  setTimeout(function(){ try{toast('家族の暗記帳につなぎました ☁️ 少し待つと問題が出ます');}catch(e){} },900);
+}
+async function init(){
+  applyTheme();
+  initConfetti();
+  if('speechSynthesis' in window){ try{ allVoices(); speechSynthesis.onvoiceschanged=function(){ allVoices(); }; }catch(e){} } // 声リストを先読み
+  maybeImportFromHash();
+  maybeJoinFromHash();
+  try{
+    await openDB();
+    DECKS=await idbAll();
+    DECKS.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  }catch(err){
+    $('#app').innerHTML=`<div class="empty"><p>このブラウザでは保存機能が使えないようです。<br>Chrome や Edge で開くか、ファイルをサーバー上に置いてお試しください。</p><p class="mut">${esc(err.message||err)}</p></div>`;
+    return;
+  }
+  render();
+  if(pendingImport){ importConfirmModal(pendingImport); pendingImport=null; }
+  if(syncOn()) startSync();
+}
+init();
+
+})();
+</script>
+
 </body>
 </html>
