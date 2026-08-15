@@ -415,7 +415,10 @@
     border-radius:8px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
   .m-ed-items{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:2px 10px; margin-bottom:8px;}
   .m-ed-item{display:flex; gap:6px; align-items:baseline; font-size:12.5px; color:var(--muted);}
-  .m-ed-it{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .m-ed-it{flex:1; min-width:0; font-family:inherit; font-size:12.5px; color:var(--text);
+    padding:4px 6px; border-radius:6px; border:1px solid transparent; background:transparent;}
+  .m-ed-it:hover{border-color:var(--border);}
+  .m-ed-it:focus{border-color:var(--accent); background:var(--surface); outline:none;}
   .m-ed-x{flex:none; border:none; background:none; cursor:pointer; color:var(--hint); font-size:14px; padding:0 4px;}
   .m-ed-x:hover{color:#c0392b;}
   .m-ed-ta{width:100%; font-family:inherit; font-size:12.5px; padding:8px 9px; border-radius:8px;
@@ -2341,11 +2344,15 @@ function buildMaterialList(m, sec){
       lab.appendChild(cb);
       lab.appendChild(el("span", null, mItemLabel(m, it)));
       const extra = [];
-      if(it.vid){
+      if(it.vid || (m.listId && it.fromList)){
         const play = el("a", "ns-play", "▶");
-        play.href = `https://www.youtube.com/watch?v=${it.vid}` + (m.listId ? `&list=${m.listId}` : "");
+        // 動画IDがある項目（日本史など）はその動画へ。
+        // 再生リストから作った項目は再生リストを開く（続きはYouTube側が覚えている）
+        play.href = it.vid
+          ? `https://www.youtube.com/watch?v=${it.vid}` + (m.listId ? `&list=${m.listId}` : "")
+          : playlistUrl(m.listId);
         play.target = "_blank"; play.rel = "noopener";
-        play.title = "動画を見る";
+        play.title = it.vid ? "動画を見る" : "再生リストを開く";
         extra.push(play);
       }
       if(it.pdf){
@@ -2483,6 +2490,17 @@ function youtubeId(url){
   if(/^[\w-]{11}$/.test(s)) return s;
   return null;
 }
+/* 再生リストのID（list=…）。まなびログでは個別動画ではなく再生リスト単位で登録する。 */
+function youtubeListId(url){
+  const s = String(url||"").trim();
+  const m = /[?&]list=([\w-]+)/.exec(s);
+  if(m) return m[1];
+  if(/^(PL|UU|OL|FL|RD)[\w-]{10,}$/.test(s)) return s;
+  return null;
+}
+const playlistUrl = id=> `https://www.youtube.com/playlist?list=${id}`;
+/* YouTubeのURLか（再生リストでも個別動画でも） */
+const isYoutube = url=> /(?:youtube\.com|youtu\.be)/i.test(String(url||""));
 /* 取り込んだPDFを開く（IndexedDBのBlobを一時URLにする） */
 async function openStoredPdf(fileId){
   try{
@@ -2531,6 +2549,8 @@ function buildEditor(m, sec){
   const fUnit = mk("単位", "input", m.unit, { type:"text", placeholder:"分 / 語 / ページ" });
   const fItem = mk("項目の数え方", "input", m.itemWord, { type:"text", placeholder:"本 / 冊 / 講" });
   const fGoal = mk("目標（0で目標なし）", "input", m.goal || 0, { type:"number", min:"0" });
+  const fList = mk("YouTube再生リストのURL", "input", m.listId ? playlistUrl(m.listId) : "",
+                   { type:"url", placeholder:"https://www.youtube.com/playlist?list=..." });
   box.appendChild(g1);
 
   const bar1 = el("div", "m-ed-acts");
@@ -2547,6 +2567,14 @@ function buildEditor(m, sec){
     if(!m.countWord) m.countWord = m.itemWord;
     m.goal = Math.max(0, parseInt(fGoal.value,10) || 0);
     m.barBy = m.goal ? "value" : "count";
+    const lv = fList.value.trim();
+    if(lv){
+      const lid = youtubeListId(lv);
+      if(!lid){ toast("再生リストのURLではありません（list=… を含むURL）"); return; }
+      m.listId = lid;
+    }else{
+      delete m.listId;
+    }
     await putMaterial(m);
     refreshMaterials();
     toast("教材を更新しました");
@@ -2581,7 +2609,18 @@ function buildEditor(m, sec){
     const ul = el("div", "m-ed-items");
     (g.items||[]).forEach(it=>{
       const row = el("div", "m-ed-item");
-      row.appendChild(el("span", "m-ed-it", mItemLabel(m, it)));
+      const nameI = document.createElement("input");
+      nameI.type = "text"; nameI.className = "m-ed-it"; nameI.value = it.title;
+      nameI.title = "タイトルを書き換えられます";
+      nameI.onchange = async ()=>{
+        const v = nameI.value.trim();
+        if(!v){ nameI.value = it.title; return; }
+        it.title = v;
+        await putMaterial(m);
+        const sec2 = document.querySelector(`#materialSections [data-mid="${m.id}"]`);
+        if(sec2){ buildMaterialList(m, sec2); renderMaterial(m, sec2); }
+      };
+      row.appendChild(nameI);
       const x = el("button", "m-ed-x", "×");
       x.title = "この項目を削除";
       x.onclick = async ()=>{
@@ -2597,7 +2636,35 @@ function buildEditor(m, sec){
     });
     gb.appendChild(ul);
 
-    /* --- 1件ずつ追加（動画URLもここに貼る） --- */
+    /* --- 再生リストから項目をまとめて作る --- */
+    if(m.listId){
+      gb.appendChild(el("div", "m-ed-sub", "再生リストから項目を作る"));
+      const pl = el("div", "m-ed-one");
+      const pn = document.createElement("input");
+      pn.type = "number"; pn.min = "1"; pn.max = "300"; pn.placeholder = "本数"; pn.className = "m-ed-o2";
+      const pv = document.createElement("input");
+      pv.type = "number"; pv.min = "0"; pv.placeholder = `1本の${m.unit}`; pv.className = "m-ed-o2";
+      const pb = el("button", "btn ghost sm", "この本数だけ作る");
+      pb.onclick = async ()=>{
+        const n = parseInt(pn.value,10) || 0;
+        if(n < 1 || n > 300){ toast("1〜300の本数を入れてください"); return; }
+        const each = parseFloat(pv.value) || 0;
+        const from = (g.items||[]).length;
+        for(let i=1; i<=n; i++){
+          g.items = g.items || [];
+          g.items.push({ k:mNextKey(g), title:`${from+i}本目`, v: each ? each*(m.vPerUnit||1) : 0, fromList:true });
+        }
+        await putMaterial(m);
+        refreshMaterials();
+        toast(`${n}${mCount(m)}を作りました。タイトルは後から直せます`);
+      };
+      pl.appendChild(pn); pl.appendChild(pv); pl.appendChild(pb);
+      gb.appendChild(pl);
+      gb.appendChild(el("div", "m-ed-hint",
+        "「1本目・2本目…」の項目を作ります。▶ は再生リストを開きます（続きはYouTube側が覚えています）。\nタイトルは下の一覧をタップして書き換えられます。"));
+    }
+
+    /* --- 1件ずつ追加 --- */
     gb.appendChild(el("div", "m-ed-sub", "項目を1つ追加"));
     const one = el("div", "m-ed-one");
     const oTitle = document.createElement("input");
@@ -2614,15 +2681,26 @@ function buildEditor(m, sec){
       if(!title && !link){ toast("タイトルかURLを入れてください"); return; }
       const item = { k:mNextKey(g), title, v: raw ? raw*(m.vPerUnit||1) : 0 };
       if(link){
-        const vid = youtubeId(link);
-        if(vid){ item.vid = vid; if(!item.title) item.title = "動画 " + vid; }
-        else   { item.url = link; if(!item.title) item.title = link.replace(/^https?:\/\//,"").slice(0,40); }
+        if(isYoutube(link)){
+          // YouTubeは再生リスト単位で登録する（個別動画は受け付けない）
+          const lid = youtubeListId(link);
+          if(!lid){
+            toast("個別の動画は登録できません。再生リストのURLを貼ってください");
+            return;
+          }
+          m.listId = lid;
+          item.fromList = true;
+          if(!item.title) item.title = ((g.items||[]).length + 1) + "本目";
+        }else{
+          item.url = link;
+          if(!item.title) item.title = link.replace(/^https?:\/\//,"").slice(0,40);
+        }
       }
       g.items = g.items || [];
       g.items.push(item);
       await putMaterial(m);
       refreshMaterials();
-      toast(link && youtubeId(link) ? "動画を追加しました（▶ で開けます）" : "項目を追加しました");
+      toast(item.fromList ? "再生リストを登録し、項目を追加しました" : "項目を追加しました");
     };
     oBtn.onclick = addOne;
     [oTitle, oVal, oUrl].forEach(i=> i.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); addOne(); } }));
@@ -2644,6 +2722,7 @@ function buildEditor(m, sec){
     add.onclick = async ()=>{
       const lines = ta.value.split("\n").map(s=>s.trim()).filter(Boolean);
       if(!lines.length){ toast("追加する行がありません"); return; }
+      let skipped = 0;
       lines.forEach(line=>{
         const p = line.split("|");
         let title = p[0].trim();
@@ -2654,17 +2733,24 @@ function buildEditor(m, sec){
         if(!link && /^https?:\/\//i.test(title)){ link = title; title = ""; }
         const item = { k:mNextKey(g), title, v };
         if(link){
-          const vid = youtubeId(link);
-          if(vid){ item.vid = vid; if(!item.title) item.title = "動画 " + vid; }
-          else   { item.url = link; if(!item.title) item.title = link.replace(/^https?:\/\//,"").slice(0,40); }
+          if(isYoutube(link)){
+            const lid = youtubeListId(link);
+            if(lid){ m.listId = lid; item.fromList = true; }
+            else { skipped++; return; }          // 個別動画の行は飛ばす
+          }else{
+            item.url = link;
+            if(!item.title) item.title = link.replace(/^https?:\/\//,"").slice(0,40);
+          }
         }
-        if(!item.title) item.title = "(名称未設定)";
+        if(!item.title) item.title = ((g.items||[]).length + 1) + "本目";
         g.items = g.items || [];
         g.items.push(item);
       });
       await putMaterial(m);
       refreshMaterials();
-      toast(`${lines.length}${m.itemWord}を追加しました`);
+      toast(skipped
+        ? `${lines.length - skipped}${m.itemWord}を追加（個別動画の${skipped}行は飛ばしました）`
+        : `${lines.length}${m.itemWord}を追加しました`);
     };
     bulk.appendChild(add);
     gb.appendChild(bulk);
