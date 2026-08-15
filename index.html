@@ -399,6 +399,28 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
+/* === 教材の編集 === */
+  .m-editor{margin:12px 0 4px; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2);}
+  .m-ed-note{font-size:11.5px; color:var(--muted); line-height:1.7; margin-bottom:10px;}
+  .m-ed-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 10px;}
+  .m-ed-f{display:flex; flex-direction:column; gap:3px;}
+  .m-ed-lb{font-size:11px; color:var(--hint);}
+  .m-ed-f input{font-family:inherit; font-size:13px; padding:7px 9px; border-radius:8px;
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
+  .m-ed-acts{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .btn.sm{font-size:12px; padding:6px 12px;}
+  .m-ed-group{margin-top:12px; padding-top:10px; border-top:1px solid var(--border);}
+  .m-ed-ghead{display:flex; gap:8px; align-items:center; margin-bottom:6px;}
+  .m-ed-gname{flex:1; font-family:inherit; font-size:13px; font-weight:600; padding:6px 9px;
+    border-radius:8px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
+  .m-ed-items{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:2px 10px; margin-bottom:8px;}
+  .m-ed-item{display:flex; gap:6px; align-items:baseline; font-size:12.5px; color:var(--muted);}
+  .m-ed-it{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .m-ed-x{flex:none; border:none; background:none; cursor:pointer; color:var(--hint); font-size:14px; padding:0 4px;}
+  .m-ed-x:hover{color:#c0392b;}
+  .m-ed-ta{width:100%; font-family:inherit; font-size:12.5px; padding:8px 9px; border-radius:8px;
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--text); margin-bottom:6px;}
+
 /* === タブ切替 === */
   .tabs{position:sticky; top:0; z-index:40; display:flex; gap:6px; overflow-x:auto;
     padding:9px 0 10px; margin-bottom:2px; background:var(--bg);
@@ -842,98 +864,9 @@
   </div>
 </section>
 
-<section data-tab="多読">
-  <div class="card">
-    <div class="card-title">
-      <span>英語多読 100万語</span>
-      <span class="manage-link" id="tdReflect">⬇ 今日の分を記録に反映</span>
-    </div>
-    <div class="td-top">
-      <span class="td-words" id="tdWords">0</span>
-      <span class="td-of">語 / 1,000,000</span>
-      <span class="td-books" id="tdBooks">0 / 159冊</span>
-    </div>
-    <div class="goal-track"><div class="goal-fill" id="tdFill" style="width:0%"></div></div>
-    <div class="td-stage" id="tdStage"></div>
-    <div class="td-today" id="tdToday"></div>
-    <details class="td">
-      <summary>本の一覧（Oxford Owl・無料の159冊）</summary>
-      <div id="tdBlocks"></div>
-    </details>
-    <details class="td">
-      <summary>ロードマップと無料素材</summary>
-      <div id="tdRoad" style="margin-top:10px;"></div>
-      <div class="td-srcs">
-        <a href="https://home.oxfordowl.co.uk/reading/free-ebooks/" target="_blank" rel="noopener">Oxford Owl</a>（159冊・要無料登録）／
-        <a href="https://er-central.com/" target="_blank" rel="noopener">ER-Central</a>（20段階・音声つき）／
-        <a href="https://storyweaver.org.in/en/" target="_blank" rel="noopener">StoryWeaver</a>（19,000冊・印刷可）／
-        <a href="https://breakingnewsenglish.com/" target="_blank" rel="noopener">Breaking News English</a>（7段階・登録不要）／
-        <a href="https://etc.usf.edu/lit2go/" target="_blank" rel="noopener">Lit2Go</a>（朗読つき古典）／
-        <a href="https://www.gutenberg.org/" target="_blank" rel="noopener">Project Gutenberg</a>（7万冊）／
-        <a href="https://www.seg.co.jp/sss/" target="_blank" rel="noopener">SSS書評システム</a>（語数を調べる）
-        <div style="margin-top:8px; color:var(--hint);">語数は各シリーズの既知の語数からの推定値です。3原則＝辞書は引かない・分からないところは飛ばす・つまらなければやめる。</div>
-      </div>
-    </details>
-  </div>
-</section>
-
-<section data-tab="講座">
-  <div class="card">
-    <div class="card-title">
-      <span>Claude Code Academy</span>
-      <span class="manage-link" id="ccaReflect">⬇ 今日の分を記録に反映</span>
-    </div>
-    <div class="td-top">
-      <span class="td-words" id="ccaMin">0</span>
-      <span class="td-of">分 / <span id="ccaTotalMin">0</span>分</span>
-      <span class="td-books" id="ccaCount">0 / 0レッスン</span>
-    </div>
-    <div class="goal-track"><div class="goal-fill" id="ccaFill" style="width:0%"></div></div>
-    <div class="td-stage" id="ccaStage"></div>
-    <div class="td-today" id="ccaToday"></div>
-    <details class="td">
-      <summary>コース別の進み具合</summary>
-      <div id="ccaCourses" style="margin-top:10px;"></div>
-    </details>
-    <details class="td">
-      <summary>レッスン一覧（6コース）</summary>
-      <div id="ccaList"></div>
-    </details>
-    <div class="td-srcs">
-      <a href="https://claude-code-academy.dev/" target="_blank" rel="noopener">claude-code-academy.dev</a>
-      <span style="color:var(--hint);">／ レッスン構成は2026-08-11時点。講座は随時追加されます。</span>
-    </div>
-  </div>
-</section>
-
-<section data-tab="日本史">
-  <div class="card">
-    <div class="card-title">
-      <span>日本史・流れがわかる39講</span>
-      <span class="manage-link" id="nsReflect">⬇ 今日の分を記録に反映</span>
-    </div>
-    <div class="td-top">
-      <span class="td-words" id="nsMin">0</span>
-      <span class="td-of">分 / <span id="nsTotalMin">0</span>分</span>
-      <span class="td-books" id="nsCount">0 / 39講</span>
-    </div>
-    <div class="goal-track"><div class="goal-fill" id="nsFill" style="width:0%"></div></div>
-    <div class="td-stage" id="nsStage"></div>
-    <div class="td-today" id="nsToday"></div>
-    <details class="td">
-      <summary>時代別の進み具合</summary>
-      <div id="nsEras" style="margin-top:10px;"></div>
-    </details>
-    <details class="td">
-      <summary>講の一覧（39講）</summary>
-      <div id="nsList"></div>
-    </details>
-    <div class="td-srcs">
-      <a href="https://youtube.com/playlist?list=PL_3pRpqIh4ENHmkqrKHeeMz2zkIj9x01G" target="_blank" rel="noopener">再生リストを開く</a>
-      <span style="color:var(--hint);">／【日本史予備校】にほよび・全39本・無料</span>
-    </div>
-  </div>
-</section>
+<!-- 教材（多読・講座・日本史ほか）はデータから動的に生成する。
+     追加・削除はアプリ内の「教材の管理」から。 -->
+<div id="materialSections"></div>
 
 <section data-tab="ふりかえり">
   <div class="card" id="brkCard">
@@ -972,6 +905,7 @@
 <input id="filePdf" type="file" accept=".pdf,application/pdf" class="hidden">
 </section>
 <div class="footer">
+  <button class="btn ghost" id="addMaterialBtn">＋ 教材を追加</button>
   <button class="btn ghost" id="exportBtn">バックアップ書き出し</button>
   <button class="btn ghost" id="importBtn">読み込み</button>
   <input type="file" id="importFile" accept="application/json" class="hidden">
@@ -1013,7 +947,7 @@ let categories = [];   // DBから読み込む
 let selSwatch = PALETTE[0];
 
 /* ---------- IndexedDB ---------- */
-const DB_NAME = "manabi-log", DB_VER = 5;
+const DB_NAME = "manabi-log", DB_VER = 6;
 let db;
 function openDB(){
   return new Promise((res, rej)=>{
@@ -1036,6 +970,14 @@ function openDB(){
       }
       if(!d.objectStoreNames.contains("nihonshi")){
         d.createObjectStore("nihonshi", { keyPath:"id" });
+      }
+      // v6: 教材そのものをデータとして持つ（追加・削除できるように）
+      if(!d.objectStoreNames.contains("materials")){
+        d.createObjectStore("materials", { keyPath:"id" });
+      }
+      // v6: 全教材のチェック状態。id は `${教材id}|${項目キー}`
+      if(!d.objectStoreNames.contains("mcheck")){
+        d.createObjectStore("mcheck", { keyPath:"id" });
       }
     };
     r.onsuccess = e=>{ db = e.target.result; res(); };
@@ -1065,6 +1007,27 @@ function getAllNs(){ return reqP(store("nihonshi","readonly").getAll()).then(r=>
 function putNs(o){ return reqP(store("nihonshi","readwrite").put(o)); }
 function delNs(id){ return reqP(store("nihonshi","readwrite").delete(id)); }
 
+function getAllMaterials(){ return reqP(store("materials","readonly").getAll()).then(r=>r||[]); }
+function putMaterial(o){ return reqP(store("materials","readwrite").put(o)); }
+function delMaterial(id){ return reqP(store("materials","readwrite").delete(id)); }
+
+function getAllCheck(){ return reqP(store("mcheck","readonly").getAll()).then(r=>r||[]); }
+function putCheck(o){ return reqP(store("mcheck","readwrite").put(o)); }
+function delCheck(id){ return reqP(store("mcheck","readwrite").delete(id)); }
+function delCheckByMaterial(mid){
+  return new Promise((res, rej)=>{
+    const s = store("mcheck","readwrite");
+    const r = s.openCursor();
+    r.onsuccess = e=>{
+      const c = e.target.result;
+      if(!c){ res(); return; }
+      if(String(c.value.id).indexOf(mid + "|") === 0) c.delete();
+      c.continue();
+    };
+    r.onerror = ()=>rej(r.error);
+  });
+}
+
 /* ---------- 日付ユーティリティ ---------- */
 const pad = n=> String(n).padStart(2,"0");
 const ymd = d=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -1085,9 +1048,7 @@ function render(){
   renderGoal();
   renderBreakdown();
   renderEntries();
-  renderTadoku();
-  renderCca();
-  renderNs();
+  materials.forEach(m=> renderMaterial(m) );
 }
 
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`; }
@@ -1759,143 +1720,6 @@ const tadokuBook = {};    // "A:0" -> { title, per }
 TADOKU_BLOCKS.forEach(b=> b.books.forEach((t,i)=>{ tadokuBook[b.id+":"+i] = { title:t, per:b.per }; }));
 const TADOKU_TOTAL_BOOKS = Object.keys(tadokuBook).length;
 
-function tadokuWords(){
-  let w = 0;
-  for(const k in tadokuChecked){ if(tadokuBook[k]) w += tadokuBook[k].per; }
-  return w;
-}
-function tadokuTodayKeys(){
-  const t = ymd(new Date());
-  return Object.keys(tadokuChecked).filter(k=> tadokuBook[k] && ymd(new Date(tadokuChecked[k]))===t );
-}
-
-function buildTadokuList(){
-  const host = document.getElementById("tdBlocks");
-  if(!host) return;
-  host.innerHTML = "";
-  TADOKU_BLOCKS.forEach(b=>{
-    const det = document.createElement("details");
-    det.className = "td-block";
-    det.style.setProperty("--bc", b.color);
-    const sum = document.createElement("summary");
-    sum.innerHTML = `<span></span><span class="td-bmeta">${b.books.length}冊・1冊約${b.per.toLocaleString("ja-JP")}語</span>`;
-    sum.firstChild.textContent = b.name;
-    const note = document.createElement("div");
-    note.className = "td-note";
-    note.textContent = b.note;
-    const list = document.createElement("div");
-    list.className = "td-list";
-    b.books.forEach((title,i)=>{
-      const key = b.id+":"+i;
-      const lab = document.createElement("label");
-      const cb = document.createElement("input");
-      cb.type = "checkbox"; cb.dataset.key = key; cb.checked = !!tadokuChecked[key];
-      const sp = document.createElement("span");
-      sp.textContent = title;
-      lab.appendChild(cb); lab.appendChild(sp);
-      list.appendChild(lab);
-    });
-    det.appendChild(sum); det.appendChild(note); det.appendChild(list);
-    host.appendChild(det);
-  });
-}
-
-function buildTadokuRoad(){
-  const host = document.getElementById("tdRoad");
-  if(!host) return;
-  const w = tadokuWords();
-  host.innerHTML = "";
-  let marked = false;
-  TADOKU_ROAD.forEach(p=>{
-    const cur = !marked && w < p.to;
-    if(cur) marked = true;
-    const el = document.createElement("div");
-    el.className = "td-phase" + (cur ? " on" : "");
-    el.innerHTML = `<span class="p1"></span><span class="p2"></span><span class="p3"></span>`;
-    el.querySelector(".p1").textContent = p.name;
-    el.querySelector(".p2").textContent = p.range;
-    el.querySelector(".p3").textContent = p.what;
-    host.appendChild(el);
-  });
-}
-
-function renderTadoku(){
-  const wEl = document.getElementById("tdWords");
-  if(!wEl) return;
-  const w = tadokuWords();
-  const n = Object.keys(tadokuChecked).filter(k=>tadokuBook[k]).length;
-  wEl.textContent = w.toLocaleString("ja-JP");
-  document.getElementById("tdBooks").textContent = `${n} / ${TADOKU_TOTAL_BOOKS}冊`;
-  document.getElementById("tdFill").style.width = Math.min(100, w/TADOKU_GOAL*100).toFixed(2)+"%";
-
-  let msg;
-  if(n===0) msg = "ブロックAの1冊目から。5冊読んでも5分で終わります。";
-  else if(w<2000)   msg = "音に慣れる段階。意味は取らなくていい。";
-  else if(w<8000)   msg = "絵で読む段階。分からない語は飛ばす。";
-  else if(w<30000)  msg = "話を読む段階。ER-Central に登録する頃。";
-  else if(w<100000) msg = "谷を越える段階。きつければブロックCに戻ってよい。";
-  else if(n<TADOKU_TOTAL_BOOKS) msg = "10万語を突破。読み切ったら ER-Central へ。";
-  else msg = "159冊 完走。ここから先は ER-Central と Breaking News English で30万語へ。";
-  document.getElementById("tdStage").textContent = msg;
-
-  const today = tadokuTodayKeys();
-  const tw = today.reduce((s,k)=> s + tadokuBook[k].per, 0);
-  document.getElementById("tdToday").textContent =
-    today.length ? `今日チェックした本：${today.length}冊・約${tw.toLocaleString("ja-JP")}語` : "";
-
-  buildTadokuRoad();
-}
-
-async function ensureTadokuCat(){
-  if(categories.find(c=>c.name===TADOKU_CAT)) return;
-  const cat = { name:TADOKU_CAT, color:nextColor(), order:categories.length };
-  await putCat(cat);
-  categories.push(cat);
-  buildChips();
-}
-
-async function tadokuReflect(){
-  const keys = tadokuTodayKeys();
-  if(keys.length===0){ toast("今日チェックした本がありません"); return; }
-  const words = keys.reduce((s,k)=> s + tadokuBook[k].per, 0);
-  await ensureTadokuCat();
-  selCat = TADOKU_CAT;
-  buildChips();
-  document.getElementById("title").value = `多読 ${keys.length}冊（約${words.toLocaleString("ja-JP")}語）`;
-  const memo = document.getElementById("memo");
-  const titles = keys.map(k=>tadokuBook[k].title).join("、");
-  memo.value = memo.value ? memo.value + "\n" + titles : titles;
-  const more = document.getElementById("more");
-  if(!more.classList.contains("open")){
-    more.classList.add("open");
-    document.getElementById("moreToggle").textContent = "－ 閉じる";
-  }
-  const minsInput = document.getElementById("mins");
-  minsInput.scrollIntoView({ behavior:"smooth", block:"center" });
-  setTimeout(()=>minsInput.focus(), 300);
-  toast(`今日の${keys.length}冊をフォームに入れました ⬇ 分数を入れて記録`);
-}
-
-function setupTadoku(){
-  const host = document.getElementById("tdBlocks");
-  if(!host) return;
-  host.addEventListener("change", async e=>{
-    const cb = e.target;
-    if(!cb || cb.type!=="checkbox") return;
-    const key = cb.dataset.key;
-    if(cb.checked){
-      const ts = Date.now();
-      tadokuChecked[key] = ts;
-      await putTadoku({ id:key, ts });
-    }else{
-      delete tadokuChecked[key];
-      await delTadoku(key);
-    }
-    renderTadoku();
-  });
-  document.getElementById("tdReflect").onclick = tadokuReflect;
-}
-
 /* ---------- Claude Code Academy ----------
    claude-code-academy.dev の6コース・全レッスン（2026-08-11時点）。
    動画の長さがそのまま学習時間になるので、記録に反映すると分数まで自動で入る。 */
@@ -2117,155 +1941,6 @@ CCA.forEach(c=>{
 const CCA_TOTAL_LESSONS = Object.keys(ccaLesson).length;
 const CCA_TOTAL_S = Object.keys(ccaLesson).reduce((s,k)=>s+ccaLesson[k].s,0);
 
-function ccaSeconds(){
-  let s = 0;
-  for(const k in ccaDone){ if(ccaLesson[k]) s += ccaLesson[k].s; }
-  return s;
-}
-function ccaTodayKeys(){
-  const t = ymd(new Date());
-  return Object.keys(ccaDone).filter(k=> ccaLesson[k] && ymd(new Date(ccaDone[k]))===t );
-}
-
-function buildCcaList(){
-  const host = document.getElementById("ccaList");
-  if(!host) return;
-  host.innerHTML = "";
-  CCA.forEach(c=>{
-    const det = document.createElement("details");
-    det.className = "td-block";
-    det.style.setProperty("--bc", c.color);
-    const sum = document.createElement("summary");
-    sum.innerHTML = `<span></span><span class="td-bmeta">${c.count}レッスン・${Math.round(c.totalS/60)}分</span>`;
-    sum.firstChild.textContent = c.name;
-    det.appendChild(sum);
-    const link = document.createElement("div");
-    link.className = "td-note";
-    link.innerHTML = `<a href="${c.url}" target="_blank" rel="noopener">この講座を開く</a>`;
-    det.appendChild(link);
-    let n = 0;
-    c.secs.forEach(([secName, list])=>{
-      const h = document.createElement("div");
-      h.className = "td-note";
-      h.style.fontWeight = "600";
-      h.style.color = "var(--text)";
-      h.textContent = secName;
-      det.appendChild(h);
-      const box = document.createElement("div");
-      box.className = "td-list";
-      list.forEach(([title, dur])=>{
-        n++;
-        const key = c.id+":"+n;
-        const lab = document.createElement("label");
-        const cb = document.createElement("input");
-        cb.type = "checkbox"; cb.dataset.key = key; cb.checked = !!ccaDone[key];
-        const sp = document.createElement("span");
-        sp.textContent = dur ? `${n}. ${title}（${dur}）` : `${n}. ${title}（準備中）`;
-        lab.appendChild(cb); lab.appendChild(sp);
-        box.appendChild(lab);
-      });
-      det.appendChild(box);
-    });
-    host.appendChild(det);
-  });
-}
-
-function buildCcaCourses(){
-  const host = document.getElementById("ccaCourses");
-  if(!host) return;
-  host.innerHTML = "";
-  CCA.forEach(c=>{
-    const done = Object.keys(ccaDone).filter(k=>ccaLesson[k] && ccaLesson[k].course===c.id).length;
-    const pct = c.count ? Math.round(done/c.count*100) : 0;
-    const el = document.createElement("div");
-    el.className = "brk-row";
-    el.innerHTML = `<span class="brk-name" style="width:auto; flex:1;"></span>
-      <div class="brk-track" style="flex:none; width:34%;"><div class="brk-fill" style="width:${pct}%; background:${c.color}"></div></div>
-      <span class="brk-val">${done}/${c.count}</span>`;
-    el.querySelector(".brk-name").textContent = c.name;
-    host.appendChild(el);
-  });
-}
-
-function renderCca(){
-  const el = document.getElementById("ccaMin");
-  if(!el) return;
-  const s = ccaSeconds();
-  const n = Object.keys(ccaDone).filter(k=>ccaLesson[k]).length;
-  el.textContent = Math.round(s/60).toLocaleString("ja-JP");
-  document.getElementById("ccaTotalMin").textContent = Math.round(CCA_TOTAL_S/60).toLocaleString("ja-JP");
-  document.getElementById("ccaCount").textContent = `${n} / ${CCA_TOTAL_LESSONS}レッスン`;
-  document.getElementById("ccaFill").style.width = (n/CCA_TOTAL_LESSONS*100).toFixed(1)+"%";
-
-  let msg;
-  if(n===0) msg = "「はじめてのClaude Code入門」の1本目から。最初の2本は無料で見られます。";
-  else if(n>=CCA_TOTAL_LESSONS) msg = "全レッスン完了。あとは自分の手を動かす番です。";
-  else{
-    const cur = CCA.find(c=> Object.keys(ccaDone).filter(k=>ccaLesson[k]&&ccaLesson[k].course===c.id).length < c.count );
-    const doneCur = cur ? Object.keys(ccaDone).filter(k=>ccaLesson[k]&&ccaLesson[k].course===cur.id).length : 0;
-    msg = cur ? `いま「${cur.name}」を受講中（${doneCur}/${cur.count}）。` : "";
-  }
-  document.getElementById("ccaStage").textContent = msg;
-
-  const today = ccaTodayKeys();
-  const ts = today.reduce((a,k)=>a+ccaLesson[k].s, 0);
-  document.getElementById("ccaToday").textContent =
-    today.length ? `今日チェックしたレッスン：${today.length}本・${Math.round(ts/60)}分` : "";
-
-  buildCcaCourses();
-}
-
-async function ensureCcaCat(){
-  if(categories.find(c=>c.name===CCA_CAT)) return;
-  const cat = { name:CCA_CAT, color:nextColor(), order:categories.length };
-  await putCat(cat);
-  categories.push(cat);
-  buildChips();
-}
-
-async function ccaReflect(){
-  const keys = ccaTodayKeys();
-  if(keys.length===0){ toast("今日チェックしたレッスンがありません"); return; }
-  const mins = Math.round(keys.reduce((a,k)=>a+ccaLesson[k].s,0)/60);
-  await ensureCcaCat();
-  selCat = CCA_CAT;
-  buildChips();
-  document.getElementById("title").value = `Claude Code Academy ${keys.length}レッスン`;
-  document.getElementById("mins").value = mins;
-  document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
-  const memo = document.getElementById("memo");
-  const titles = keys.map(k=>ccaLesson[k].title).join("、");
-  memo.value = memo.value ? memo.value + "\n" + titles : titles;
-  const more = document.getElementById("more");
-  if(!more.classList.contains("open")){
-    more.classList.add("open");
-    document.getElementById("moreToggle").textContent = "－ 閉じる";
-  }
-  const titleEl = document.getElementById("title");
-  titleEl.scrollIntoView({ behavior:"smooth", block:"center" });
-  toast(`今日の${keys.length}レッスン・${mins}分を入れました ⬇`);
-}
-
-function setupCca(){
-  const host = document.getElementById("ccaList");
-  if(!host) return;
-  host.addEventListener("change", async e=>{
-    const cb = e.target;
-    if(!cb || cb.type!=="checkbox") return;
-    const key = cb.dataset.key;
-    if(cb.checked){
-      const ts = Date.now();
-      ccaDone[key] = ts;
-      await putCca({ id:key, ts });
-    }else{
-      delete ccaDone[key];
-      await delCca(key);
-    }
-    renderCca();
-  });
-  document.getElementById("ccaReflect").onclick = ccaReflect;
-}
-
 /* ---------- 日本史・流れがわかる39講 ----------
    YouTube【日本史予備校】にほよび の再生リスト（2026-08-11時点・全39本）。
    時代ごとにまとめ直してある。動画の長さがそのまま学習時間になる。 */
@@ -2332,156 +2007,644 @@ NS_VIDEOS.forEach(([no, title, dur, id])=>{
 const NS_TOTAL = NS_VIDEOS.length;
 const NS_TOTAL_S = NS_VIDEOS.reduce((s,v)=>s+ccaSecs(v[2]), 0);
 
-function nsSeconds(){
-  let s = 0;
-  for(const k in nsDone){ if(nsVideo[k]) s += nsVideo[k].s; }
-  return s;
-}
-function nsTodayKeys(){
+/* ---------- 教材エンジン ----------
+   多読・講座・日本史も含め、すべての教材をこの1つの仕組みで動かす。
+   定義は materials ストア、チェックは mcheck ストア（id = `${教材id}|${項目キー}`）。
+   ※ 既存3つのチェックは項目キーを変えずに移行しているので、進捗はそのまま引き継がれる。 */
+
+let materials = [];
+let mchecked = {};                 // "mid|key" -> ts
+let editingMid = null;             // 編集パネルを開いている教材（作り直しても開いたままにする）
+
+const ckey  = (mid,k)=> mid+"|"+k;
+const mList = m=>{ const a=[]; (m.groups||[]).forEach(g=> (g.items||[]).forEach(it=> a.push({g,it}))); return a; };
+const mTotal= m=> mList(m).length;
+const mDone = m=> mList(m).filter(x=> mchecked[ckey(m.id,x.it.k)]);
+const mVal  = m=> mDone(m).reduce((s,x)=> s+(x.it.v||0), 0);
+const mValAll = m=> mList(m).reduce((s,x)=> s+(x.it.v||0), 0);
+const mDisp = (v,m)=> Math.round(v/(m.vPerUnit||1));
+const mNum  = v=> v.toLocaleString("ja-JP");
+const mCount= m=> m.countWord || m.itemWord || "個";
+function mToday(m){
   const t = ymd(new Date());
-  return Object.keys(nsDone).filter(k=> nsVideo[k] && ymd(new Date(nsDone[k]))===t )
-                            .sort((a,b)=>(+a)-(+b));
+  return mList(m).filter(x=>{ const ts = mchecked[ckey(m.id,x.it.k)]; return ts && ymd(new Date(ts))===t; });
+}
+function mById(id){ return materials.find(m=>m.id===id); }
+function mNextKey(g){
+  let n = 0;
+  (g.items||[]).forEach(it=>{ const mm = /:(\d+)$/.exec(it.k); if(mm) n = Math.max(n, +mm[1]); });
+  return g.id+":"+(n+1);
 }
 
-function buildNsList(){
-  const host = document.getElementById("nsList");
+/* ---------- 初回シード（コード内の定数 → データ化） ---------- */
+function seedBuiltins(){
+  const tadoku = {
+    id:"tadoku", name:"英語多読 100万語", short:"多読", cat:TADOKU_CAT, order:0, builtin:true,
+    unit:"語", itemWord:"冊", countWord:"冊", todayWord:"本", vPerUnit:1,
+    goal:TADOKU_GOAL, barBy:"value", stageMode:"stages",
+    startMsg:"ブロックAの1冊目から。5冊読んでも5分で終わります。",
+    doneMsg:"159冊 完走。ここから先は ER-Central と Breaking News English で30万語へ。",
+    stages:[
+      { lt:2000,   msg:"音に慣れる段階。意味は取らなくていい。" },
+      { lt:8000,   msg:"絵で読む段階。分からない語は飛ばす。" },
+      { lt:30000,  msg:"話を読む段階。ER-Central に登録する頃。" },
+      { lt:100000, msg:"谷を越える段階。きつければブロックCに戻ってよい。" },
+      { lt:null,   msg:"10万語を突破。読み切ったら ER-Central へ。" }
+    ],
+    listTitle:"本の一覧（Oxford Owl・無料の159冊）",
+    reflectTitle:"多読 {n}冊（約{v}語）", setMins:false,
+    road: TADOKU_ROAD.map(r=>({ name:r.name, range:r.range, to:r.to, what:r.what })),
+    roadTitle:"ロードマップと無料素材",
+    links:[
+      { url:"https://home.oxfordowl.co.uk/reading/free-ebooks/", label:"Oxford Owl", note:"159冊・要無料登録" },
+      { url:"https://er-central.com/", label:"ER-Central", note:"20段階・音声つき" },
+      { url:"https://storyweaver.org.in/en/", label:"StoryWeaver", note:"19,000冊・印刷可" },
+      { url:"https://breakingnewsenglish.com/", label:"Breaking News English", note:"7段階・登録不要" },
+      { url:"https://etc.usf.edu/lit2go/", label:"Lit2Go", note:"朗読つき古典" },
+      { url:"https://www.gutenberg.org/", label:"Project Gutenberg", note:"7万冊" },
+      { url:"https://www.seg.co.jp/sss/", label:"SSS書評システム", note:"語数を調べる" }
+    ],
+    note:"語数は各シリーズの既知の語数からの推定値です。3原則＝辞書は引かない・分からないところは飛ばす・つまらなければやめる。",
+    groups: TADOKU_BLOCKS.map(b=>({
+      id:b.id, name:b.name, color:b.color, note:b.note, url:null,
+      items: b.books.map((title,i)=>({ k:b.id+":"+i, title, v:b.per }))
+    }))
+  };
+
+  const cca = {
+    id:"cca", name:"Claude Code Academy", short:"講座", cat:CCA_CAT, order:1, builtin:true,
+    unit:"分", itemWord:"レッスン", countWord:"レッスン", todayWord:"レッスン", vPerUnit:60,
+    goal:0, barBy:"count", stageMode:"group", noSuffix:".",
+    startMsg:"「はじめてのClaude Code入門」の1本目から。最初の2本は無料で見られます。",
+    doneMsg:"全レッスン完了。あとは自分の手を動かす番です。",
+    listTitle:"レッスン一覧（"+CCA.length+"コース）",
+    reflectTitle:"Claude Code Academy {n}レッスン", setMins:true,
+    groups: CCA.map(c=>{
+      let n = 0; const items = [];
+      c.secs.forEach(([secName, list])=> list.forEach(([title, dur])=>{
+        n++;
+        items.push({ k:c.id+":"+n, title, v:ccaSecs(dur), sec:secName, no:n, dur:dur||null });
+      }));
+      return { id:c.id, name:c.name, color:c.color, note:null, url:c.url, items };
+    })
+  };
+
+  const ns = {
+    id:"nihonshi", name:"日本史・流れがわかる39講", short:"日本史", cat:NS_CAT, order:2, builtin:true,
+    unit:"分", itemWord:"講", countWord:"本", todayWord:"講", vPerUnit:60,
+    goal:0, barBy:"count", stageMode:"next", noSuffix:"講", listId:NS_LIST,
+    startMsg:"1講「旧石器・縄文・弥生」から。1本40分前後です。",
+    doneMsg:"39講 完走。通史がひと通り入りました。",
+    listTitle:"講の一覧（39講）",
+    reflectMode:"range", reflectTitle:"日本史 {n}講", setMins:true,
+    groups: NS_ERAS.map(e=>({
+      id:"e"+e.from, name:e.name, color:e.color, note:null, url:null,
+      metaPrefix:`${e.from}〜${e.to}講`,
+      items: NS_VIDEOS.filter(v=> v[0]>=e.from && v[0]<=e.to )
+                      .map(([no,title,dur,vid])=>({ k:String(no), title, v:ccaSecs(dur), no, dur, vid }))
+    }))
+  };
+  return [tadoku, cca, ns];
+}
+
+/* 旧ストア（tadoku / cca / nihonshi）のチェックを mcheck へ写す。項目キーは変えない。 */
+async function migrateChecks(){
+  const pairs = [["tadoku", await getAllTadoku()], ["cca", await getAllCca()], ["nihonshi", await getAllNs()]];
+  let n = 0;
+  for(const [mid, rows] of pairs){
+    for(const r of rows){
+      const id = ckey(mid, r.id);
+      if(mchecked[id]) continue;
+      mchecked[id] = r.ts;
+      await putCheck({ id, ts:r.ts });
+      n++;
+    }
+  }
+  return n;
+}
+
+async function loadMaterials(){
+  materials = await getAllMaterials();
+  (await getAllCheck()).forEach(r=>{ mchecked[r.id] = r.ts; });
+  if(materials.length === 0){
+    materials = seedBuiltins();
+    for(const m of materials) await putMaterial(m);
+    const n = await migrateChecks();
+    if(n) toast(`教材の進捗 ${n}件を引き継ぎました`);
+  }
+  materials.sort((a,b)=>(a.order||0)-(b.order||0));
+}
+
+/* ---------- 表示 ---------- */
+function mGroupMeta(m, g){
+  const items = g.items || [];
+  const parts = [];
+  if(g.metaPrefix) parts.push(g.metaPrefix);
+  parts.push(items.length + mCount(m));
+  const vs = items.map(i=>i.v||0);
+  const sum = vs.reduce((s,v)=>s+v, 0);
+  if(sum > 0){
+    const uniform = vs.every(v=> v===vs[0]) && vs[0] > 0;
+    parts.push(uniform ? `1${m.itemWord}約${mNum(mDisp(vs[0],m))}${m.unit}`
+                       : `${mNum(mDisp(sum,m))}${m.unit}`);
+  }
+  return parts.join("・");
+}
+function mItemLabel(m, it){
+  if(it.no != null){
+    const suf = m.noSuffix || ".";
+    const tail = it.dur ? `（${it.dur}）` : (m.id==="cca" ? "（準備中）" : "");
+    return `${it.no}${suf} ${it.title}${tail}`.replace(". ", ". ");
+  }
+  return it.title;
+}
+function mStageMsg(m){
+  const done = mDone(m).length, total = mTotal(m), v = mVal(m);
+  if(total === 0) return "まだ項目がありません。「教材を編集」から追加してください。";
+  if(done === 0) return m.startMsg || `1${m.itemWord}目から。`;
+  if(done >= total) return m.doneMsg || `全${total}${m.itemWord} 完了。`;
+  if(m.stageMode === "stages" && m.stages){
+    const hit = m.stages.find(s=> s.lt == null || v < s.lt );
+    return hit ? hit.msg : "";
+  }
+  if(m.stageMode === "group"){
+    const g = (m.groups||[]).find(g=> (g.items||[]).some(it=> !mchecked[ckey(m.id,it.k)] ));
+    if(!g) return "";
+    const d = (g.items||[]).filter(it=> mchecked[ckey(m.id,it.k)] ).length;
+    return `いま「${g.name}」を進行中（${d}/${g.items.length}）。`;
+  }
+  // next: 未チェックの最初の項目
+  for(const g of (m.groups||[])){
+    for(const it of (g.items||[])){
+      if(!mchecked[ckey(m.id,it.k)]) return `次は${it.no!=null ? it.no+(m.noSuffix||"") : ""}「${it.title}」（${g.name}）。`;
+    }
+  }
+  return "";
+}
+
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text != null) e.textContent = text;
+  return e;
+}
+
+function buildMaterialSections(){
+  const host = document.getElementById("materialSections");
   if(!host) return;
   host.innerHTML = "";
-  NS_ERAS.forEach(era=>{
-    const det = document.createElement("details");
-    det.className = "td-block";
-    det.style.setProperty("--bc", era.color);
-    const vids = NS_VIDEOS.filter(v=> v[0]>=era.from && v[0]<=era.to );
-    const mins = Math.round(vids.reduce((s,v)=>s+ccaSecs(v[2]),0)/60);
-    const sum = document.createElement("summary");
-    sum.innerHTML = `<span></span><span class="td-bmeta">${era.from}〜${era.to}講・${vids.length}本・${mins}分</span>`;
-    sum.firstChild.textContent = era.name;
+  materials.forEach(m=>{
+    const sec = el("section");
+    sec.dataset.tab = m.short || m.name;   // タブは短い名前で出す
+    sec.dataset.mid = m.id;
+    const card = el("div", "card");
+
+    const title = el("div", "card-title");
+    title.appendChild(el("span", null, m.name));
+    const acts = el("span");
+    acts.style.cssText = "display:flex; gap:12px; align-items:baseline;";
+    const refl = el("span", "manage-link", "⬇ 今日の分を記録に反映");
+    refl.dataset.act = "reflect";
+    const edit = el("span", "manage-link", "✎ 教材を編集");
+    edit.dataset.act = "edit";
+    acts.appendChild(refl); acts.appendChild(edit);
+    title.appendChild(acts);
+    card.appendChild(title);
+
+    const top = el("div", "td-top");
+    top.appendChild(el("span", "td-words m-val", "0"));
+    top.appendChild(el("span", "td-of m-of", ""));
+    top.appendChild(el("span", "td-books m-count", ""));
+    card.appendChild(top);
+
+    const track = el("div", "goal-track");
+    track.appendChild(el("div", "goal-fill m-fill"));
+    card.appendChild(track);
+    card.appendChild(el("div", "td-stage m-stage"));
+    card.appendChild(el("div", "td-today m-today"));
+
+    const edBox = el("div", "m-editor");
+    edBox.style.display = "none";
+    card.appendChild(edBox);
+    if(editingMid === m.id) edit.dataset.open = "1";
+
+    const dGrp = el("details", "td");
+    dGrp.appendChild(el("summary", null, m.groups && m.groups.length > 1 ? "グループ別の進み具合" : "進み具合"));
+    dGrp.appendChild(el("div", "m-groups"));
+    card.appendChild(dGrp);
+
+    const dList = el("details", "td");
+    dList.appendChild(el("summary", null, m.listTitle || "一覧"));
+    dList.appendChild(el("div", "m-list"));
+    card.appendChild(dList);
+
+    if(m.road && m.road.length){
+      const dRoad = el("details", "td");
+      dRoad.appendChild(el("summary", null, m.roadTitle || "ロードマップ"));
+      const rd = el("div", "m-road"); rd.style.marginTop = "10px";
+      dRoad.appendChild(rd);
+      if(m.links && m.links.length){
+        const src = el("div", "td-srcs");
+        m.links.forEach((l,i)=>{
+          const a = el("a", null, l.label);
+          a.href = l.url; a.target = "_blank"; a.rel = "noopener";
+          src.appendChild(a);
+          if(l.note) src.appendChild(document.createTextNode(`（${l.note}）`));
+          if(i < m.links.length-1) src.appendChild(document.createTextNode("／"));
+        });
+        if(m.note){
+          const nt = el("div", null, m.note);
+          nt.style.cssText = "margin-top:8px; color:var(--hint);";
+          src.appendChild(nt);
+        }
+        dRoad.appendChild(src);
+      }
+      card.appendChild(dRoad);
+    }
+
+    sec.appendChild(card);
+    host.appendChild(sec);
+    buildMaterialList(m, sec);
+    renderMaterial(m, sec);
+    if(editingMid === m.id){          // 追加・削除のたびに閉じないようにする
+      buildEditor(m, sec);
+      edBox.style.display = "";
+      edit.textContent = "✎ 編集を閉じる";
+    }
+  });
+}
+
+function buildMaterialList(m, sec){
+  const host = sec.querySelector(".m-list");
+  host.innerHTML = "";
+  (m.groups||[]).forEach(g=>{
+    const det = el("details", "td-block");
+    det.style.setProperty("--bc", g.color || "var(--accent)");
+    const sum = el("summary");
+    sum.appendChild(el("span", null, g.name));
+    sum.appendChild(el("span", "td-bmeta", mGroupMeta(m, g)));
     det.appendChild(sum);
-    const box = document.createElement("div");
-    box.className = "td-list";
-    vids.forEach(([no, title, dur, id])=>{
-      const item = document.createElement("div");
-      item.className = "ns-item";
-      const lab = document.createElement("label");
+    if(g.url){
+      const link = el("div", "td-note");
+      const a = el("a", null, "この講座を開く");
+      a.href = g.url; a.target = "_blank"; a.rel = "noopener";
+      link.appendChild(a);
+      det.appendChild(link);
+    }
+    if(g.note) det.appendChild(el("div", "td-note", g.note));
+
+    let box = null, curSec = null;
+    (g.items||[]).forEach(it=>{
+      if(it.sec && it.sec !== curSec){
+        curSec = it.sec;
+        const h = el("div", "td-note", it.sec);
+        h.style.fontWeight = "600"; h.style.color = "var(--text)";
+        det.appendChild(h);
+        box = null;
+      }
+      if(!box){ box = el("div", "td-list"); det.appendChild(box); }
+      const lab = el("label");
       const cb = document.createElement("input");
-      cb.type = "checkbox"; cb.dataset.key = String(no); cb.checked = !!nsDone[String(no)];
-      const sp = document.createElement("span");
-      sp.textContent = `${no}講 ${title}（${dur}）`;
-      lab.appendChild(cb); lab.appendChild(sp);
-      const play = document.createElement("a");
-      play.className = "ns-play";
-      play.href = `https://www.youtube.com/watch?v=${id}&list=${NS_LIST}`;
-      play.target = "_blank"; play.rel = "noopener";
-      play.title = `${no}講を見る`;
-      play.textContent = "▶";
-      item.appendChild(lab); item.appendChild(play);
-      box.appendChild(item);
+      cb.type = "checkbox"; cb.dataset.key = it.k;
+      cb.checked = !!mchecked[ckey(m.id, it.k)];
+      lab.appendChild(cb);
+      lab.appendChild(el("span", null, mItemLabel(m, it)));
+      if(it.vid){
+        const wrap = el("div", "ns-item");
+        const play = el("a", "ns-play", "▶");
+        play.href = `https://www.youtube.com/watch?v=${it.vid}` + (m.listId ? `&list=${m.listId}` : "");
+        play.target = "_blank"; play.rel = "noopener";
+        wrap.appendChild(lab); wrap.appendChild(play);
+        box.appendChild(wrap);
+      }else{
+        box.appendChild(lab);
+      }
     });
-    det.appendChild(box);
     host.appendChild(det);
   });
 }
 
-function buildNsEras(){
-  const host = document.getElementById("nsEras");
-  if(!host) return;
-  host.innerHTML = "";
-  NS_ERAS.forEach(era=>{
-    const total = era.to - era.from + 1;
-    let done = 0;
-    for(let n=era.from; n<=era.to; n++) if(nsDone[String(n)]) done++;
-    const pct = Math.round(done/total*100);
-    const el = document.createElement("div");
-    el.className = "brk-row";
-    el.innerHTML = `<span class="brk-name" style="width:auto; flex:1;"></span>
-      <div class="brk-track" style="flex:none; width:34%;"><div class="brk-fill" style="width:${pct}%; background:${era.color}"></div></div>
-      <span class="brk-val">${done}/${total}</span>`;
-    el.querySelector(".brk-name").textContent = era.name;
-    host.appendChild(el);
+function renderMaterial(m, sec){
+  sec = sec || document.querySelector(`#materialSections [data-mid="${m.id}"]`);
+  if(!sec) return;
+  const done = mDone(m).length, total = mTotal(m);
+  const v = mVal(m), allV = mValAll(m);
+  const goalDisp = m.goal ? mNum(m.goal) : mNum(mDisp(allV, m));
+
+  sec.querySelector(".m-val").textContent = mNum(mDisp(v, m));
+  sec.querySelector(".m-of").textContent = `${m.unit} / ${goalDisp}`;
+  sec.querySelector(".m-count").textContent = `${done} / ${total}${m.itemWord}`;
+  const pct = m.barBy === "value"
+    ? (m.goal ? Math.min(100, mDisp(v,m)/m.goal*100) : 0)
+    : (total ? done/total*100 : 0);
+  sec.querySelector(".m-fill").style.width = pct.toFixed(2)+"%";
+  sec.querySelector(".m-stage").textContent = mStageMsg(m);
+
+  const today = mToday(m);
+  const tv = today.reduce((s,x)=>s+(x.it.v||0), 0);
+  sec.querySelector(".m-today").textContent = today.length
+    ? `今日チェックした${m.todayWord||m.itemWord}：${today.length}${mCount(m)}・${m.unit==="語"?"約":""}${mNum(mDisp(tv,m))}${m.unit}`
+    : "";
+
+  const gh = sec.querySelector(".m-groups");
+  gh.innerHTML = "";
+  (m.groups||[]).forEach(g=>{
+    const t = (g.items||[]).length;
+    const d = (g.items||[]).filter(it=> mchecked[ckey(m.id,it.k)] ).length;
+    const pc = t ? Math.round(d/t*100) : 0;
+    const row = el("div", "brk-row");
+    row.innerHTML = `<span class="brk-name" style="width:auto; flex:1;"></span>
+      <div class="brk-track" style="flex:none; width:34%;"><div class="brk-fill" style="width:${pc}%; background:${g.color||"var(--accent)"}"></div></div>
+      <span class="brk-val">${d}/${t}</span>`;
+    row.querySelector(".brk-name").textContent = g.name;
+    gh.appendChild(row);
   });
-}
 
-function renderNs(){
-  const el = document.getElementById("nsMin");
-  if(!el) return;
-  const s = nsSeconds();
-  const n = Object.keys(nsDone).filter(k=>nsVideo[k]).length;
-  el.textContent = Math.round(s/60).toLocaleString("ja-JP");
-  document.getElementById("nsTotalMin").textContent = Math.round(NS_TOTAL_S/60).toLocaleString("ja-JP");
-  document.getElementById("nsCount").textContent = `${n} / ${NS_TOTAL}講`;
-  document.getElementById("nsFill").style.width = (n/NS_TOTAL*100).toFixed(1)+"%";
-
-  let msg;
-  if(n===0) msg = "1講「旧石器・縄文・弥生」から。1本40分前後です。";
-  else if(n>=NS_TOTAL) msg = "39講 完走。通史がひと通り入りました。";
-  else{
-    let next = 1;
-    while(next<=NS_TOTAL && nsDone[String(next)]) next++;
-    const era = NS_ERAS.find(e=> next>=e.from && next<=e.to );
-    msg = `次は${next}講「${nsVideo[String(next)].title}」${era ? `（${era.name}）` : ""}。`;
+  const rh = sec.querySelector(".m-road");
+  if(rh){
+    rh.innerHTML = "";
+    let marked = false;
+    (m.road||[]).forEach(p=>{
+      const cur = !marked && mDisp(v,m) < p.to;
+      if(cur) marked = true;
+      const e = el("div", "td-phase" + (cur ? " on" : ""));
+      e.innerHTML = `<span class="p1"></span><span class="p2"></span><span class="p3"></span>`;
+      e.querySelector(".p1").textContent = p.name;
+      e.querySelector(".p2").textContent = p.range;
+      e.querySelector(".p3").textContent = p.what;
+      rh.appendChild(e);
+    });
   }
-  document.getElementById("nsStage").textContent = msg;
-
-  const today = nsTodayKeys();
-  const ts = today.reduce((a,k)=>a+nsVideo[k].s, 0);
-  document.getElementById("nsToday").textContent =
-    today.length ? `今日チェックした講：${today.length}本・${Math.round(ts/60)}分` : "";
-
-  buildNsEras();
 }
 
-async function ensureNsCat(){
-  if(categories.find(c=>c.name===NS_CAT)) return;
-  const cat = { name:NS_CAT, color:nextColor(), order:categories.length };
+/* ---------- 記録フォームへ反映 ---------- */
+async function ensureCat(name){
+  if(categories.find(c=>c.name===name)) return;
+  const cat = { name, color:nextColor(), order:categories.length };
   await putCat(cat);
   categories.push(cat);
   buildChips();
 }
-
-async function nsReflect(){
-  const keys = nsTodayKeys();
-  if(keys.length===0){ toast("今日チェックした講がありません"); return; }
-  const mins = Math.round(keys.reduce((a,k)=>a+nsVideo[k].s,0)/60);
-  await ensureNsCat();
-  selCat = NS_CAT;
+async function materialReflect(m){
+  const today = mToday(m);
+  if(today.length === 0){ toast(`今日チェックした${m.todayWord||m.itemWord}がありません`); return; }
+  const v = today.reduce((s,x)=>s+(x.it.v||0), 0);
+  const disp = mDisp(v, m);
+  await ensureCat(m.cat || m.name);
+  selCat = m.cat || m.name;
   buildChips();
-  const nums = keys.map(k=>nsVideo[k].no);
-  document.getElementById("title").value =
-    keys.length===1 ? `日本史 ${nums[0]}講 ${nsVideo[keys[0]].title}` : `日本史 ${nums[0]}〜${nums[nums.length-1]}講（${keys.length}本）`;
-  document.getElementById("mins").value = mins;
-  document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
+
+  let title;
+  if(m.reflectMode === "range" && today.length > 1 && today[0].it.no != null){
+    const nos = today.map(x=>x.it.no).sort((a,b)=>a-b);
+    title = `${m.name.split("・")[0]} ${nos[0]}〜${nos[nos.length-1]}${m.itemWord}（${today.length}${mCount(m)}）`;
+  }else if(m.reflectMode === "range" && today.length === 1){
+    title = `${m.name.split("・")[0]} ${today[0].it.no}${m.itemWord} ${today[0].it.title}`;
+  }else{
+    title = (m.reflectTitle || `${m.name} {n}${m.itemWord}`)
+      .replace("{n}", today.length).replace("{v}", mNum(disp)).replace("{name}", m.name);
+  }
+  document.getElementById("title").value = title;
+  if(m.setMins){
+    document.getElementById("mins").value = disp;
+    document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
+  }
   const memo = document.getElementById("memo");
-  const titles = keys.map(k=>`${nsVideo[k].no}講 ${nsVideo[k].title}`).join("、");
+  const titles = today.map(x=> x.it.no!=null ? `${x.it.no}${m.noSuffix||""} ${x.it.title}` : x.it.title ).join("、");
   memo.value = memo.value ? memo.value + "\n" + titles : titles;
   const more = document.getElementById("more");
   if(!more.classList.contains("open")){
     more.classList.add("open");
     document.getElementById("moreToggle").textContent = "－ 閉じる";
   }
-  const titleEl = document.getElementById("title");
-  titleEl.scrollIntoView({ behavior:"smooth", block:"center" });
-  toast(`今日の${keys.length}講・${mins}分を入れました ⬇`);
+  const focusEl = document.getElementById(m.setMins ? "title" : "mins");
+  focusEl.scrollIntoView({ behavior:"smooth", block:"center" });
+  if(!m.setMins) setTimeout(()=>focusEl.focus(), 300);
+  toast(`今日の${today.length}${mCount(m)}${m.setMins ? "・"+disp+m.unit : ""}を入れました ⬇`);
 }
 
-function setupNs(){
-  const host = document.getElementById("nsList");
+/* ---------- 教材の編集（追加・削除） ---------- */
+const UNIT_PRESETS = [
+  { unit:"分",   itemWord:"本",       hint:"動画・音声の講座向け" },
+  { unit:"語",   itemWord:"冊",       hint:"多読向け" },
+  { unit:"ページ", itemWord:"冊",     hint:"参考書・問題集向け" },
+  { unit:"問",   itemWord:"回",       hint:"問題演習向け" },
+  { unit:"回",   itemWord:"回",       hint:"数えるだけ" }
+];
+
+function buildEditor(m, sec){
+  const box = sec.querySelector(".m-editor");
+  box.innerHTML = "";
+
+  const warn = el("div", "m-ed-note", m.builtin
+    ? "この教材は最初から入っていたものです。編集・削除しても、記録した学習履歴は消えません。"
+    : "項目を削除すると、その項目のチェックも消えます。");
+  box.appendChild(warn);
+
+  /* 基本設定 */
+  const g1 = el("div", "m-ed-grid");
+  const mk = (label, tag, val, attrs)=>{
+    const w = el("label", "m-ed-f");
+    w.appendChild(el("span", "m-ed-lb", label));
+    const i = document.createElement(tag);
+    Object.assign(i, attrs||{});
+    i.value = val == null ? "" : val;
+    w.appendChild(i);
+    g1.appendChild(w);
+    return i;
+  };
+  const fName = mk("教材の名前", "input", m.name, { type:"text" });
+  const fShort= mk("タブに出す短い名前", "input", m.short || m.name, { type:"text", placeholder:"例：簿記" });
+  const fCat  = mk("記録のカテゴリ", "input", m.cat || "", { type:"text", placeholder:"例：英語" });
+  const fUnit = mk("単位", "input", m.unit, { type:"text", placeholder:"分 / 語 / ページ" });
+  const fItem = mk("項目の数え方", "input", m.itemWord, { type:"text", placeholder:"本 / 冊 / 講" });
+  const fGoal = mk("目標（0で目標なし）", "input", m.goal || 0, { type:"number", min:"0" });
+  box.appendChild(g1);
+
+  const bar1 = el("div", "m-ed-acts");
+  const bSave = el("button", "btn ghost sm", "この内容で保存");
+  bSave.onclick = async ()=>{
+    const nm = fName.value.trim();
+    if(!nm){ toast("名前を入れてください"); return; }
+    if(materials.some(x=> x.id!==m.id && x.name===nm )){ toast("同じ名前の教材があります"); return; }
+    m.name = nm;
+    m.short = fShort.value.trim() || nm;
+    m.cat  = fCat.value.trim() || nm;
+    m.unit = fUnit.value.trim() || "回";
+    m.itemWord = fItem.value.trim() || "個";
+    if(!m.countWord) m.countWord = m.itemWord;
+    m.goal = Math.max(0, parseInt(fGoal.value,10) || 0);
+    m.barBy = m.goal ? "value" : "count";
+    await putMaterial(m);
+    refreshMaterials();
+    toast("教材を更新しました");
+  };
+  bar1.appendChild(bSave);
+  box.appendChild(bar1);
+
+  /* グループと項目 */
+  (m.groups||[]).forEach(g=>{
+    const gb = el("div", "m-ed-group");
+    const head = el("div", "m-ed-ghead");
+    const gi = document.createElement("input");
+    gi.type = "text"; gi.value = g.name; gi.className = "m-ed-gname";
+    gi.onchange = async ()=>{ g.name = gi.value.trim() || g.name; await putMaterial(m); refreshMaterials(); };
+    head.appendChild(gi);
+    const gdel = el("button", "btn ghost sm", "グループを削除");
+    gdel.onclick = async ()=>{
+      if(!confirm(`「${g.name}」を、中の${(g.items||[]).length}${m.itemWord}ごと削除します。よろしいですか？`)) return;
+      for(const it of (g.items||[])){
+        const id = ckey(m.id, it.k);
+        if(mchecked[id]){ delete mchecked[id]; await delCheck(id); }
+      }
+      m.groups = m.groups.filter(x=> x !== g);
+      await putMaterial(m);
+      refreshMaterials();
+      toast("グループを削除しました");
+    };
+    head.appendChild(gdel);
+    gb.appendChild(head);
+
+    const ul = el("div", "m-ed-items");
+    (g.items||[]).forEach(it=>{
+      const row = el("div", "m-ed-item");
+      row.appendChild(el("span", "m-ed-it", mItemLabel(m, it)));
+      const x = el("button", "m-ed-x", "×");
+      x.title = "この項目を削除";
+      x.onclick = async ()=>{
+        const id = ckey(m.id, it.k);
+        if(mchecked[id]){ delete mchecked[id]; await delCheck(id); }
+        g.items = g.items.filter(y=> y !== it );
+        await putMaterial(m);
+        refreshMaterials();
+      };
+      row.appendChild(x);
+      ul.appendChild(row);
+    });
+    gb.appendChild(ul);
+
+    const ta = document.createElement("textarea");
+    ta.className = "m-ed-ta";
+    ta.rows = 2;
+    ta.placeholder = `項目を追加（1行に1つ）\n「タイトル | ${m.unit}数」と書くと ${m.unit} も設定できます`;
+    gb.appendChild(ta);
+    const add = el("button", "btn ghost sm", "この行を項目として追加");
+    add.onclick = async ()=>{
+      const lines = ta.value.split("\n").map(s=>s.trim()).filter(Boolean);
+      if(!lines.length){ toast("追加する行がありません"); return; }
+      lines.forEach(line=>{
+        const p = line.split("|");
+        const title = p[0].trim();
+        const raw = p[1] ? parseFloat(p[1].replace(/[^\d.]/g,"")) : 0;
+        const v = raw ? raw * (m.vPerUnit||1) : 0;
+        g.items = g.items || [];
+        g.items.push({ k:mNextKey(g), title, v });
+      });
+      await putMaterial(m);
+      refreshMaterials();
+      toast(`${lines.length}${m.itemWord}を追加しました`);
+    };
+    gb.appendChild(add);
+    box.appendChild(gb);
+  });
+
+  const bar2 = el("div", "m-ed-acts");
+  const bAddG = el("button", "btn ghost sm", "＋ グループを追加");
+  bAddG.onclick = async ()=>{
+    const name = prompt("グループの名前（例：第1章、入門編）");
+    if(!name || !name.trim()) return;
+    m.groups = m.groups || [];
+    m.groups.push({ id:"g"+Date.now().toString(36), name:name.trim(), color:nextColor(), note:null, url:null, items:[] });
+    await putMaterial(m);
+    refreshMaterials();
+  };
+  bar2.appendChild(bAddG);
+
+  const bDel = el("button", "btn ghost sm", "🗑 この教材を削除");
+  bDel.style.color = "#c0392b";
+  bDel.onclick = async ()=>{
+    if(!confirm(`教材「${m.name}」を削除します。\nチェックした進捗も消えます（記録した学習履歴は残ります）。\nよろしいですか？`)) return;
+    await delMaterial(m.id);
+    await delCheckByMaterial(m.id);
+    Object.keys(mchecked).forEach(k=>{ if(k.indexOf(m.id+"|")===0) delete mchecked[k]; });
+    materials = materials.filter(x=> x.id !== m.id );
+    editingMid = null;
+    refreshMaterials();
+    toast(`「${m.name}」を削除しました`);
+  };
+  bar2.appendChild(bDel);
+  box.appendChild(bar2);
+}
+
+async function addMaterial(){
+  const name = prompt("新しい教材の名前（例：簿記2級 講義）");
+  if(!name || !name.trim()) return;
+  const nm = name.trim();
+  if(materials.some(m=>m.name===nm)){ toast("同じ名前の教材があります"); return; }
+  const m = {
+    id:"m"+Date.now().toString(36), name:nm, short:nm.slice(0,6), cat:nm, order:materials.length, builtin:false,
+    unit:"分", itemWord:"本", countWord:"本", todayWord:"本", vPerUnit:1,
+    goal:0, barBy:"count", stageMode:"next", setMins:true,
+    listTitle:"項目の一覧",
+    groups:[{ id:"g1", name:"すべて", color:nextColor(), note:null, url:null, items:[] }]
+  };
+  materials.push(m);
+  await putMaterial(m);
+  refreshMaterials();
+  editingMid = m.id;
+  refreshMaterials();
+  if(window.showTab) window.showTab(m.short || nm);
+  toast("教材を作りました。単位と項目を設定してください");
+}
+
+/* 教材まわりを作り直す（タブも作り直す） */
+function refreshMaterials(){
+  materials.sort((a,b)=>(a.order||0)-(b.order||0));
+  buildMaterialSections();
+  if(window.rebuildTabs) window.rebuildTabs();
+}
+
+function setupMaterials(){
+  const host = document.getElementById("materialSections");
   if(!host) return;
   host.addEventListener("change", async e=>{
     const cb = e.target;
-    if(!cb || cb.type!=="checkbox") return;
-    const key = cb.dataset.key;
+    if(!cb || cb.type !== "checkbox") return;
+    const sec = cb.closest("[data-mid]");
+    if(!sec) return;
+    const m = mById(sec.dataset.mid);
+    if(!m) return;
+    const id = ckey(m.id, cb.dataset.key);
     if(cb.checked){
       const ts = Date.now();
-      nsDone[key] = ts;
-      await putNs({ id:key, ts });
+      mchecked[id] = ts;
+      await putCheck({ id, ts });
     }else{
-      delete nsDone[key];
-      await delNs(key);
+      delete mchecked[id];
+      await delCheck(id);
     }
-    renderNs();
+    renderMaterial(m, sec);
   });
-  document.getElementById("nsReflect").onclick = nsReflect;
+  host.addEventListener("click", e=>{
+    const t = e.target.closest("[data-act]");
+    if(!t) return;
+    const sec = t.closest("[data-mid]");
+    const m = mById(sec.dataset.mid);
+    if(!m) return;
+    if(t.dataset.act === "reflect") materialReflect(m);
+    if(t.dataset.act === "edit"){
+      const box = sec.querySelector(".m-editor");
+      const open = box.style.display === "none";
+      editingMid = open ? m.id : null;
+      if(open) buildEditor(m, sec);
+      box.style.display = open ? "" : "none";
+      t.textContent = open ? "✎ 編集を閉じる" : "✎ 教材を編集";
+    }
+  });
+  const btn = document.getElementById("addMaterialBtn");
+  if(btn) btn.onclick = addMaterial;
 }
+
 
 /* ---------- 起動 ---------- */
 (async function init(){
@@ -2498,21 +2661,16 @@ function setupNs(){
     }
     categories.sort((a,b)=>(a.order||0)-(b.order||0));
     entries = await getAll();
-    (await getAllTadoku()).forEach(r=>{ tadokuChecked[r.id] = r.ts; });
-    (await getAllCca()).forEach(r=>{ ccaDone[r.id] = r.ts; });
-    (await getAllNs()).forEach(r=>{ nsDone[r.id] = r.ts; });
+    await loadMaterials();
   }catch(err){
     categories = DEFAULT_CATEGORIES.slice();
     toast("データベースを開けませんでした");
   }
   selCat = categories[0] ? categories[0].name : "";
   buildChips();
-  buildTadokuList();
-  setupTadoku();
-  buildCcaList();
-  setupCca();
-  buildNsList();
-  setupNs();
+  buildMaterialSections();
+  setupMaterials();
+  if(window.rebuildTabs) window.rebuildTabs();
   render();
   // Enterで保存（内容欄）
   document.getElementById("title").addEventListener("keydown", e=>{
@@ -2525,25 +2683,40 @@ function setupNs(){
 /* タブ切替：data-tab を持つセクションを出し分ける。
    パシャ暗記のセクションは統合時に data-tab="暗記" を付けて差し込まれる。 */
 (function(){
-  var ORDER = ['きろく','ふりかえり','多読','講座','日本史','暗記'];
+  /* 並び順：きろく・ふりかえり を先頭、暗記を末尾、教材はその間にDOM順で入る。
+     教材は追加・削除できるので、タブは毎回DOMから作り直す。 */
+  var RANK = { 'きろく':0, 'ふりかえり':1, '暗記':99 };
   var KEY = 'manabi-tab';
-  function init(){
-    var secs = [].slice.call(document.querySelectorAll('[data-tab]'));
-    var bar  = document.getElementById('tabs');
-    if(!bar || !secs.length) return;
-    var names = ORDER.filter(function(n){
-      return secs.some(function(s){ return s.dataset.tab === n; });
+  var current = null;
+
+  function sections(){ return [].slice.call(document.querySelectorAll('[data-tab]')); }
+
+  function show(name, scroll){
+    var secs = sections();
+    if(!secs.some(function(s){ return s.dataset.tab === name; })) return;
+    current = name;
+    secs.forEach(function(s){ s.style.display = (s.dataset.tab === name) ? '' : 'none'; });
+    var bar = document.getElementById('tabs');
+    if(bar) [].slice.call(bar.children).forEach(function(b){
+      var on = b.dataset.tabname === name;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
-    function show(name, scroll){
-      secs.forEach(function(s){ s.style.display = (s.dataset.tab === name) ? '' : 'none'; });
-      [].slice.call(bar.children).forEach(function(b){
-        var on = b.dataset.tabname === name;
-        b.classList.toggle('on', on);
-        b.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      try{ localStorage.setItem(KEY, name); }catch(e){}
-      if(scroll) window.scrollTo({top:0, behavior:'smooth'});
-    }
+    try{ localStorage.setItem(KEY, name); }catch(e){}
+    if(scroll) window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function build(){
+    var bar = document.getElementById('tabs');
+    var secs = sections();
+    if(!bar || !secs.length) return;
+    var names = [];
+    secs.forEach(function(s){ if(names.indexOf(s.dataset.tab) < 0) names.push(s.dataset.tab); });
+    names.sort(function(a,b){
+      var ra = RANK[a] == null ? 50 : RANK[a], rb = RANK[b] == null ? 50 : RANK[b];
+      return ra !== rb ? ra - rb : names.indexOf(a) - names.indexOf(b);
+    });
+    bar.innerHTML = '';
     names.forEach(function(n){
       var b = document.createElement('button');
       b.type='button'; b.className='tab'; b.textContent=n; b.dataset.tabname=n;
@@ -2552,12 +2725,15 @@ function setupNs(){
       bar.appendChild(b);
     });
     bar.setAttribute('role','tablist');
-    var saved = null;
-    try{ saved = localStorage.getItem(KEY); }catch(e){}
+    var saved = current;
+    if(!saved){ try{ saved = localStorage.getItem(KEY); }catch(e){} }
     show(names.indexOf(saved) >= 0 ? saved : names[0], false);
   }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+
+  window.rebuildTabs = build;
+  window.showTab = function(n){ show(n, true); };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
+  else build();
 })();
 </script>
 <!-- === パシャ暗記 統合ここから === -->
