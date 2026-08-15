@@ -420,6 +420,16 @@
   .m-ed-x:hover{color:#c0392b;}
   .m-ed-ta{width:100%; font-family:inherit; font-size:12.5px; padding:8px 9px; border-radius:8px;
     border:1px solid var(--border-strong); background:var(--surface); color:var(--text); margin-bottom:6px;}
+  .m-ed-sub{font-size:12px; font-weight:600; color:var(--text); margin:10px 0 5px;}
+  .m-ed-one{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .m-ed-one input{font-family:inherit; font-size:12.5px; padding:7px 9px; border-radius:8px;
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--text); min-width:0;}
+  .m-ed-o1{flex:2 1 160px;}
+  .m-ed-o2{flex:0 0 68px;}
+  .m-ed-o3{flex:3 1 190px;}
+  .m-ed-hint{font-size:11px; color:var(--hint); line-height:1.75; margin:5px 0 2px; white-space:pre-line;}
+  .m-ed-bulk{margin-top:10px;}
+  .m-ed-bulk>summary{font-size:12px; color:var(--accent); cursor:pointer; user-select:none; margin-bottom:6px;}
 
 /* === タブ切替 === */
   .tabs{position:sticky; top:0; z-index:40; display:flex; gap:6px; overflow-x:auto;
@@ -947,7 +957,7 @@ let categories = [];   // DBから読み込む
 let selSwatch = PALETTE[0];
 
 /* ---------- IndexedDB ---------- */
-const DB_NAME = "manabi-log", DB_VER = 6;
+const DB_NAME = "manabi-log", DB_VER = 7;
 let db;
 function openDB(){
   return new Promise((res, rej)=>{
@@ -979,9 +989,19 @@ function openDB(){
       if(!d.objectStoreNames.contains("mcheck")){
         d.createObjectStore("mcheck", { keyPath:"id" });
       }
+      // v7: 取り込んだPDFの実ファイル（端末内にだけ置く）
+      if(!d.objectStoreNames.contains("files")){
+        d.createObjectStore("files", { keyPath:"id" });
+      }
     };
     r.onsuccess = e=>{ db = e.target.result; res(); };
     r.onerror = e=>rej(e.target.error);
+    // 別のタブ・別ウィンドウで古いバージョンを開いたままだと更新が始まらず、
+    // 何も言わずに固まってしまうので知らせる
+    r.onblocked = ()=>{
+      alert("まなびログが別のタブでも開いています。\nそのタブを閉じてから、このページを再読み込みしてください。");
+      rej(new Error("blocked"));
+    };
   });
 }
 function store(name, mode){ return db.transaction(name, mode).objectStore(name); }
@@ -1014,6 +1034,9 @@ function delMaterial(id){ return reqP(store("materials","readwrite").delete(id))
 function getAllCheck(){ return reqP(store("mcheck","readonly").getAll()).then(r=>r||[]); }
 function putCheck(o){ return reqP(store("mcheck","readwrite").put(o)); }
 function delCheck(id){ return reqP(store("mcheck","readwrite").delete(id)); }
+function getFile(id){ return reqP(store("files","readonly").get(id)); }
+function putFile(o){ return reqP(store("files","readwrite").put(o)); }
+function delFile(id){ return reqP(store("files","readwrite").delete(id)); }
 function delCheckByMaterial(mid){
   return new Promise((res, rej)=>{
     const s = store("mcheck","readwrite");
@@ -1424,16 +1447,19 @@ async function save(){
 
 /* ---------- バックアップ ---------- */
 function exportJSON(){
-  const tadoku = Object.keys(tadokuChecked).map(id=>({ id, ts:tadokuChecked[id] }));
-  const cca = Object.keys(ccaDone).map(id=>({ id, ts:ccaDone[id] }));
-  const nihonshi = Object.keys(nsDone).map(id=>({ id, ts:nsDone[id] }));
-  const data = JSON.stringify({ app:"manabi-log", version:4, exportedAt:new Date().toISOString(), entries, tadoku, cca, nihonshi }, null, 2);
+  const checks = Object.keys(mchecked).map(id=>({ id, ts:mchecked[id] }));
+  // PDFの実ファイルは大きいのでバックアップには含めない（項目は残り、ファイルだけ入れ直しになる）
+  const mats = materials.map(m=> JSON.parse(JSON.stringify(m)) );
+  const data = JSON.stringify({
+    app:"manabi-log", version:5, exportedAt:new Date().toISOString(),
+    entries, cats:categories, materials:mats, checks
+  }, null, 2);
   const blob = new Blob([data], { type:"application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = `manabi-log-${ymd(new Date())}.json`;
   a.click(); URL.revokeObjectURL(url);
-  toast("バックアップを書き出しました");
+  toast("バックアップを書き出しました（PDFの実ファイルは含みません）");
 }
 function importJSON(ev){
   const file = ev.target.files[0];
@@ -1444,41 +1470,46 @@ function importJSON(ev){
       const data = JSON.parse(reader.result);
       const list = Array.isArray(data) ? data : data.entries;
       if(!Array.isArray(list)) throw new Error("形式が違います");
-      const td = (!Array.isArray(data) && Array.isArray(data.tadoku)) ? data.tadoku : [];
-      const cc = (!Array.isArray(data) && Array.isArray(data.cca)) ? data.cca : [];
-      const ns = (!Array.isArray(data) && Array.isArray(data.nihonshi)) ? data.nihonshi : [];
-      const msg = `${list.length}件を読み込みます。同じIDは上書きされます。`
-        + (td.length ? `\n多読のチェック${td.length}冊分も復元します。` : "")
-        + (cc.length ? `\nClaude Code Academyのチェック${cc.length}レッスン分も復元します。` : "")
-        + (ns.length ? `\n日本史のチェック${ns.length}講分も復元します。` : "")
+      const mats   = (!Array.isArray(data) && Array.isArray(data.materials)) ? data.materials : [];
+      let   checks = (!Array.isArray(data) && Array.isArray(data.checks))    ? data.checks    : [];
+      // 旧形式(version 4以前)のチェックは教材idを補って読み込む
+      if(!Array.isArray(data)){
+        [["tadoku","tadoku"],["cca","cca"],["nihonshi","nihonshi"]].forEach(([key, mid])=>{
+          if(Array.isArray(data[key])) data[key].forEach(r=>{
+            if(r && r.id) checks.push({ id: mid+"|"+r.id, ts:r.ts });
+          });
+        });
+      }
+      const msg = `${list.length}件の記録を読み込みます。同じIDは上書きされます。`
+        + (mats.length   ? `\n教材${mats.length}件も復元します（PDFの実ファイルは含まれません）。` : "")
+        + (checks.length ? `\nチェック${checks.length}件も復元します。` : "")
         + "\nよろしいですか？";
       if(!confirm(msg)) return;
-      for(const e of list){
-        if(!e.id) e.id = (Date.now().toString(36)+Math.random().toString(36).slice(2,8));
-        await putEntry(e);
+
+      for(const en of list){
+        if(!en.id) en.id = (Date.now().toString(36)+Math.random().toString(36).slice(2,8));
+        await putEntry(en);
       }
-      for(const r of td){
-        if(!r || !r.id || !tadokuBook[r.id]) continue;
-        const rec = { id:r.id, ts:r.ts || Date.now() };
-        await putTadoku(rec);
-        tadokuChecked[rec.id] = rec.ts;
+      if(!Array.isArray(data) && Array.isArray(data.cats)){
+        for(const c of data.cats){ if(c && c.name) await putCat(c); }
+        categories = await getAllCats();
+        categories.sort((a,b)=>(a.order||0)-(b.order||0));
       }
-      for(const r of cc){
-        if(!r || !r.id || !ccaLesson[r.id]) continue;
-        const rec = { id:r.id, ts:r.ts || Date.now() };
-        await putCca(rec);
-        ccaDone[rec.id] = rec.ts;
+      for(const m of mats){
+        if(!m || !m.id) continue;
+        await putMaterial(m);
+        const i = materials.findIndex(x=>x.id===m.id);
+        if(i >= 0) materials[i] = m; else materials.push(m);
       }
-      for(const r of ns){
-        if(!r || !r.id || !nsVideo[r.id]) continue;
+      for(const r of checks){
+        if(!r || !r.id) continue;
         const rec = { id:String(r.id), ts:r.ts || Date.now() };
-        await putNs(rec);
-        nsDone[rec.id] = rec.ts;
+        await putCheck(rec);
+        mchecked[rec.id] = rec.ts;
       }
       entries = await getAll();
-      buildTadokuList();
-      buildCcaList();
-      buildNsList();
+      buildChips();
+      refreshMaterials();
       render();
       toast(`${list.length}件を読み込みました`);
     }catch(err){ toast("読み込みに失敗しました"); }
@@ -2309,12 +2340,30 @@ function buildMaterialList(m, sec){
       cb.checked = !!mchecked[ckey(m.id, it.k)];
       lab.appendChild(cb);
       lab.appendChild(el("span", null, mItemLabel(m, it)));
+      const extra = [];
       if(it.vid){
-        const wrap = el("div", "ns-item");
         const play = el("a", "ns-play", "▶");
         play.href = `https://www.youtube.com/watch?v=${it.vid}` + (m.listId ? `&list=${m.listId}` : "");
         play.target = "_blank"; play.rel = "noopener";
-        wrap.appendChild(lab); wrap.appendChild(play);
+        play.title = "動画を見る";
+        extra.push(play);
+      }
+      if(it.pdf){
+        const doc = el("a", "ns-play", "📄");
+        doc.href = "#"; doc.title = "PDFを開く";
+        doc.dataset.pdf = it.pdf;
+        extra.push(doc);
+      }
+      if(it.url && !it.vid){
+        const lk = el("a", "ns-play", "🔗");
+        lk.href = it.url; lk.target = "_blank"; lk.rel = "noopener";
+        lk.title = "開く";
+        extra.push(lk);
+      }
+      if(extra.length){
+        const wrap = el("div", "ns-item");
+        wrap.appendChild(lab);
+        extra.forEach(x=> wrap.appendChild(x));
         box.appendChild(wrap);
       }else{
         box.appendChild(lab);
@@ -2423,6 +2472,29 @@ async function materialReflect(m){
   toast(`今日の${today.length}${mCount(m)}${m.setMins ? "・"+disp+m.unit : ""}を入れました ⬇`);
 }
 
+
+/* YouTubeのURLから動画IDを取り出す（watch / youtu.be / shorts / embed に対応） */
+function youtubeId(url){
+  const s = String(url||"").trim();
+  let m = /[?&]v=([\w-]{11})/.exec(s);            if(m) return m[1];
+  m = /youtu\.be\/([\w-]{11})/.exec(s);          if(m) return m[1];
+  m = /\/shorts\/([\w-]{11})/.exec(s);           if(m) return m[1];
+  m = /\/embed\/([\w-]{11})/.exec(s);            if(m) return m[1];
+  if(/^[\w-]{11}$/.test(s)) return s;
+  return null;
+}
+/* 取り込んだPDFを開く（IndexedDBのBlobを一時URLにする） */
+async function openStoredPdf(fileId){
+  try{
+    const rec = await getFile(fileId);
+    if(!rec || !rec.blob){ toast("PDFが見つかりません（バックアップから復元した場合は入れ直してください）"); return; }
+    const url = URL.createObjectURL(rec.blob);
+    window.open(url, "_blank", "noopener");
+    setTimeout(()=> URL.revokeObjectURL(url), 60000);
+  }catch(e){ toast("PDFを開けませんでした"); }
+}
+const fmtSize = b=> b >= 1048576 ? (b/1048576).toFixed(1)+"MB" : Math.round(b/1024)+"KB";
+
 /* ---------- 教材の編集（追加・削除） ---------- */
 const UNIT_PRESETS = [
   { unit:"分",   itemWord:"本",       hint:"動画・音声の講座向け" },
@@ -2496,6 +2568,7 @@ function buildEditor(m, sec){
       for(const it of (g.items||[])){
         const id = ckey(m.id, it.k);
         if(mchecked[id]){ delete mchecked[id]; await delCheck(id); }
+        if(it.pdf) await delFile(it.pdf);
       }
       m.groups = m.groups.filter(x=> x !== g);
       await putMaterial(m);
@@ -2514,6 +2587,7 @@ function buildEditor(m, sec){
       x.onclick = async ()=>{
         const id = ckey(m.id, it.k);
         if(mchecked[id]){ delete mchecked[id]; await delCheck(id); }
+        if(it.pdf) await delFile(it.pdf);
         g.items = g.items.filter(y=> y !== it );
         await putMaterial(m);
         refreshMaterials();
@@ -2523,28 +2597,106 @@ function buildEditor(m, sec){
     });
     gb.appendChild(ul);
 
+    /* --- 1件ずつ追加（動画URLもここに貼る） --- */
+    gb.appendChild(el("div", "m-ed-sub", "項目を1つ追加"));
+    const one = el("div", "m-ed-one");
+    const oTitle = document.createElement("input");
+    oTitle.type = "text"; oTitle.placeholder = "タイトル（例：第1回 導入）"; oTitle.className = "m-ed-o1";
+    const oVal = document.createElement("input");
+    oVal.type = "number"; oVal.min = "0"; oVal.placeholder = m.unit; oVal.className = "m-ed-o2";
+    const oUrl = document.createElement("input");
+    oUrl.type = "url"; oUrl.placeholder = "YouTubeのURL（任意）"; oUrl.className = "m-ed-o3";
+    const oBtn = el("button", "btn ghost sm", "＋ 追加");
+    const addOne = async ()=>{
+      const link = oUrl.value.trim();
+      let title = oTitle.value.trim();
+      const raw = parseFloat(oVal.value) || 0;
+      if(!title && !link){ toast("タイトルかURLを入れてください"); return; }
+      const item = { k:mNextKey(g), title, v: raw ? raw*(m.vPerUnit||1) : 0 };
+      if(link){
+        const vid = youtubeId(link);
+        if(vid){ item.vid = vid; if(!item.title) item.title = "動画 " + vid; }
+        else   { item.url = link; if(!item.title) item.title = link.replace(/^https?:\/\//,"").slice(0,40); }
+      }
+      g.items = g.items || [];
+      g.items.push(item);
+      await putMaterial(m);
+      refreshMaterials();
+      toast(link && youtubeId(link) ? "動画を追加しました（▶ で開けます）" : "項目を追加しました");
+    };
+    oBtn.onclick = addOne;
+    [oTitle, oVal, oUrl].forEach(i=> i.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); addOne(); } }));
+    one.appendChild(oTitle); one.appendChild(oVal); one.appendChild(oUrl); one.appendChild(oBtn);
+    gb.appendChild(one);
+    gb.appendChild(el("div", "m-ed-hint",
+      `YouTubeのURLを入れると ▶ ボタンが付いて、そこから動画を開けます。${m.unit}数は空でも構いません。`));
+
+    /* --- まとめて追加 --- */
+    const bulk = el("details", "m-ed-bulk");
+    bulk.appendChild(el("summary", null, "まとめて追加する"));
+    bulk.appendChild(el("div", "m-ed-hint",
+      `1行に1つ。「タイトル ｜ ${m.unit}数 ｜ URL」の順で、うしろ2つは省略できます。\n例）第1回 導入 | 42 | https://youtu.be/xxxxxxxxxxx\n例）第2回 応用`));
     const ta = document.createElement("textarea");
     ta.className = "m-ed-ta";
-    ta.rows = 2;
-    ta.placeholder = `項目を追加（1行に1つ）\n「タイトル | ${m.unit}数」と書くと ${m.unit} も設定できます`;
-    gb.appendChild(ta);
-    const add = el("button", "btn ghost sm", "この行を項目として追加");
+    ta.rows = 3;
+    bulk.appendChild(ta);
+    const add = el("button", "btn ghost sm", "この内容でまとめて追加");
     add.onclick = async ()=>{
       const lines = ta.value.split("\n").map(s=>s.trim()).filter(Boolean);
       if(!lines.length){ toast("追加する行がありません"); return; }
       lines.forEach(line=>{
         const p = line.split("|");
-        const title = p[0].trim();
+        let title = p[0].trim();
         const raw = p[1] ? parseFloat(p[1].replace(/[^\d.]/g,"")) : 0;
         const v = raw ? raw * (m.vPerUnit||1) : 0;
+        // 3つ目（または1つ目そのもの）がURLなら、リンクとして持たせる
+        let link = (p[2] || "").trim();
+        if(!link && /^https?:\/\//i.test(title)){ link = title; title = ""; }
+        const item = { k:mNextKey(g), title, v };
+        if(link){
+          const vid = youtubeId(link);
+          if(vid){ item.vid = vid; if(!item.title) item.title = "動画 " + vid; }
+          else   { item.url = link; if(!item.title) item.title = link.replace(/^https?:\/\//,"").slice(0,40); }
+        }
+        if(!item.title) item.title = "(名称未設定)";
         g.items = g.items || [];
-        g.items.push({ k:mNextKey(g), title, v });
+        g.items.push(item);
       });
       await putMaterial(m);
       refreshMaterials();
       toast(`${lines.length}${m.itemWord}を追加しました`);
     };
-    gb.appendChild(add);
+    bulk.appendChild(add);
+    gb.appendChild(bulk);
+
+    const pdfWrap = el("div", "m-ed-acts");
+    const pdfIn = document.createElement("input");
+    pdfIn.type = "file"; pdfIn.accept = "application/pdf,.pdf"; pdfIn.multiple = true;
+    pdfIn.className = "hidden";
+    const pdfBtn = el("button", "btn ghost sm", "📄 PDFを取り込んで項目にする");
+    pdfBtn.onclick = ()=> pdfIn.click();
+    pdfIn.onchange = async ()=>{
+      const files = [...pdfIn.files];
+      pdfIn.value = "";
+      if(!files.length) return;
+      const big = files.filter(f=> f.size > 30*1024*1024 );
+      if(big.length){
+        const names = big.map(f=> f.name+"（"+fmtSize(f.size)+"）" ).join("\n");
+        if(!confirm(names + "\n大きいファイルです。端末の保存領域を使います。取り込みますか？")) return;
+      }
+      for(const f of files){
+        const id = "f"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+        await putFile({ id, name:f.name, size:f.size, type:f.type, blob:f });
+        g.items = g.items || [];
+        g.items.push({ k:mNextKey(g), title:f.name.replace(/\.pdf$/i,""), v:0, pdf:id, size:f.size });
+      }
+      await putMaterial(m);
+      refreshMaterials();
+      toast(`PDF ${files.length}件を項目にしました`);
+    };
+    pdfWrap.appendChild(pdfBtn); pdfWrap.appendChild(pdfIn);
+    gb.appendChild(pdfWrap);
+
     box.appendChild(gb);
   });
 
@@ -2564,6 +2716,7 @@ function buildEditor(m, sec){
   bDel.style.color = "#c0392b";
   bDel.onclick = async ()=>{
     if(!confirm(`教材「${m.name}」を削除します。\nチェックした進捗も消えます（記録した学習履歴は残ります）。\nよろしいですか？`)) return;
+    for(const g of (m.groups||[])) for(const it of (g.items||[])) if(it.pdf) await delFile(it.pdf);
     await delMaterial(m.id);
     await delCheckByMaterial(m.id);
     Object.keys(mchecked).forEach(k=>{ if(k.indexOf(m.id+"|")===0) delete mchecked[k]; });
@@ -2626,6 +2779,8 @@ function setupMaterials(){
     renderMaterial(m, sec);
   });
   host.addEventListener("click", e=>{
+    const pdfLink = e.target.closest("[data-pdf]");
+    if(pdfLink){ e.preventDefault(); openStoredPdf(pdfLink.dataset.pdf); return; }
     const t = e.target.closest("[data-act]");
     if(!t) return;
     const sec = t.closest("[data-mid]");
