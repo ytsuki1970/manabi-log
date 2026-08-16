@@ -463,6 +463,12 @@
     background:var(--surface); color:var(--muted);}
   .dt-mode:hover{color:var(--text); border-color:var(--accent);}
   .dt-mode.on{background:var(--accent); color:#fff; border-color:transparent;}
+  #bookVideo{width:100%; max-width:420px; border-radius:10px; margin:8px 0; background:#000;}
+  #bookIsbn{font-family:var(--num), monospace; font-size:13px; padding:6px 9px; border-radius:8px;
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
+  #appImportArea{width:100%; font-family:var(--num), monospace; font-size:12px; line-height:1.6;
+    padding:9px; border-radius:8px; border:1px solid var(--border-strong);
+    background:var(--surface-2); color:var(--text); resize:vertical;}
   #dayTextArea{width:100%; font-family:var(--num), monospace; font-size:12.5px; line-height:1.8;
     padding:10px; border-radius:8px; border:1px solid var(--border-strong);
     background:var(--surface-2); color:var(--text); resize:vertical;}
@@ -948,6 +954,19 @@
     <textarea id="dayTextArea" rows="12" spellcheck="false"></textarea>
     <div class="m-ed-hint">ブログに貼れる形にしてあります。この欄で直接直してからコピーもできます。</div>
   </div>
+  <div class="card" id="bookBox" style="display:none;">
+    <div class="card-title" style="padding:0;"><span>参考書を教材として登録</span></div>
+    <div class="m-ed-hint">本の裏のバーコード（ISBN・978ではじまる方）を写すと、書名を調べて教材にします。
+カメラが使えないときは、下の欄に13桁を直接入れてください。</div>
+    <div class="dt-head">
+      <button type="button" class="btn ghost sm" id="bookScan">📷 カメラで読む</button>
+      <input type="text" id="bookIsbn" inputmode="numeric" placeholder="ISBN 13桁" style="flex:1; min-width:150px;">
+      <button type="button" class="btn ghost sm" id="bookLookup">この番号で調べる</button>
+    </div>
+    <video id="bookVideo" playsinline muted style="display:none;"></video>
+    <div id="bookResult" class="m-ed-hint"></div>
+  </div>
+
   <div class="card" id="appImportBox" style="display:none;">
     <div class="card-title" style="padding:0;"><span>学習アプリから取り込む</span></div>
     <div class="m-ed-hint">司法書士ドリルや世界史一問一答の「まなびログへ書き出す」で出したものを、
@@ -989,6 +1008,7 @@
 <div class="footer">
   <button class="btn ghost" id="addMaterialBtn">＋ 教材を追加</button>
   <button class="btn ghost" id="appImportBtn">📥 アプリから取り込む</button>
+  <button class="btn ghost" id="bookBtn">📷 参考書を登録</button>
   <button class="btn ghost" id="exportBtn">バックアップ書き出し</button>
   <button class="btn ghost" id="importBtn">読み込み</button>
   <input type="file" id="importFile" accept="application/json" class="hidden">
@@ -2797,6 +2817,156 @@ function setupDayText(){
   };
 }
 
+/* ---------- 参考書をバーコードで登録 ----------
+   ISBN(EAN-13) を読み、openBD（無料・登録不要）で書名を引いて教材にする。
+   読み取りは①ブラウザ標準の BarcodeDetector（Android等）
+   ②無ければ ZXing をCDNから遅延読み込み（iPhoneのSafari用）の順で試す。 */
+const OPENBD = "https://api.openbd.jp/v1/get?isbn=";
+const ZXING_CDN = "https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js";
+let bookStop = null;                       // 読み取り停止用
+
+function isIsbn13(s){
+  const d = String(s||"").replace(/[^0-9]/g,"");
+  if(d.length !== 13 || !/^97[89]/.test(d)) return null;
+  let sum = 0;
+  for(let i=0; i<12; i++) sum += (+d[i]) * (i % 2 ? 3 : 1);
+  return ((10 - sum % 10) % 10) === +d[12] ? d : null;
+}
+function loadScript(src){
+  return new Promise((res, rej)=>{
+    const s = document.createElement("script");
+    s.src = src; s.onload = res; s.onerror = ()=>rej(new Error("読み込めませんでした"));
+    document.head.appendChild(s);
+  });
+}
+async function lookupBook(isbn){
+  const r = await fetch(OPENBD + isbn);
+  const j = await r.json();
+  const rec = j && j[0];
+  if(!rec) return null;
+  const s = rec.summary || {};
+  let pages = 0;
+  try{
+    const ext = rec.onix.DescriptiveDetail.Extent || [];
+    const p = ext.find(e=> e.ExtentType === "11" || e.ExtentType === "00" );
+    if(p) pages = parseInt(p.ExtentValue, 10) || 0;
+  }catch(e){}
+  // openBDの著者は「奥村,晴彦,1951-」のような書誌形式で来るので読める形に整える
+  const author = String(s.author || "")
+    .split("/").map(a=> a.replace(/,?\s*\d{4}-?\d{0,4}\s*$/, "").replace(/,/g, "").trim() )
+    .filter(Boolean).join("、");
+  return { isbn, title:s.title || "", author, publisher:s.publisher || "",
+           pubdate:s.pubdate || "", pages };
+}
+async function bookRegister(info){
+  const nm = (info.title || "").trim() || ("ISBN " + info.isbn);
+  if(materials.some(m=> m.name === nm )){ toast("同じ名前の教材があります"); return; }
+  const m = {
+    id:"m"+Date.now().toString(36), name:nm, short:nm.slice(0,6), cat:nm,
+    order:materials.length, builtin:false,
+    unit:"ページ", itemWord:"章", countWord:"章", todayWord:"章", vPerUnit:1,
+    goal: info.pages || 0, barBy: info.pages ? "value" : "count",
+    stageMode:"next", setMins:false, listTitle:"章の一覧",
+    isbn:info.isbn, author:info.author, publisher:info.publisher,
+    groups:[{ id:"g1", name:"章", color:nextColor(), note:
+      [info.author, info.publisher, info.pubdate ? info.pubdate.slice(0,4)+"年" : ""]
+        .filter(Boolean).join("／"), url:null, items:[] }]
+  };
+  materials.push(m);
+  await putMaterial(m);
+  editingMid = m.id;
+  refreshMaterials();
+  if(window.showTab) window.showTab(m.short);
+  toast("『" + nm + "』を教材にしました。章を足してください");
+}
+async function bookFromIsbn(isbn){
+  const res = document.getElementById("bookResult");
+  res.textContent = "調べています…";
+  try{
+    const info = await lookupBook(isbn);
+    if(!info || !info.title){
+      res.textContent = `ISBN ${isbn} は openBD に見つかりませんでした。教材名を手で入れて登録することもできます。`;
+      const nm = prompt("見つからなかったので、教材の名前を入れてください", "");
+      if(nm && nm.trim()) await bookRegister({ isbn, title:nm.trim(), author:"", publisher:"", pubdate:"", pages:0 });
+      return;
+    }
+    res.textContent = `『${info.title}』${info.author ? "／" + info.author : ""}`
+      + (info.pages ? `（${info.pages}ページ）` : "");
+    if(confirm(`『${info.title}』\n${info.author}\n${info.publisher}\n\n教材として登録しますか？`)){
+      await bookRegister(info);
+    }
+  }catch(e){
+    res.textContent = "調べられませんでした（ネットに繋がっていないかもしれません）。";
+  }
+}
+async function bookScanStart(){
+  const video = document.getElementById("bookVideo");
+  const res = document.getElementById("bookResult");
+  if(bookStop){ bookStop(); return; }
+  video.style.display = "";
+  res.textContent = "カメラを準備しています…";
+  const done = isbn=>{
+    if(bookStop) bookStop();
+    document.getElementById("bookIsbn").value = isbn;
+    bookFromIsbn(isbn);
+  };
+  try{
+    if("BarcodeDetector" in window){
+      const det = new BarcodeDetector({ formats:["ean_13"] });
+      const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" } });
+      video.srcObject = stream; await video.play();
+      res.textContent = "本の裏のバーコードを枠に入れてください";
+      let stopped = false;
+      bookStop = ()=>{ stopped = true; stream.getTracks().forEach(t=>t.stop());
+                       video.style.display = "none"; bookStop = null; };
+      const tick = async ()=>{
+        if(stopped) return;
+        try{
+          const codes = await det.detect(video);
+          const hit = codes.map(c=> isIsbn13(c.rawValue) ).find(Boolean);
+          if(hit){ done(hit); return; }
+        }catch(e){}
+        requestAnimationFrame(tick);
+      };
+      tick();
+    }else{
+      res.textContent = "読み取り機能を準備しています（初回のみ通信します）…";
+      if(!window.ZXingBrowser) await loadScript(ZXING_CDN);
+      const reader = new ZXingBrowser.BrowserMultiFormatReader();
+      res.textContent = "本の裏のバーコードを枠に入れてください";
+      const ctrl = await reader.decodeFromVideoDevice(undefined, video, (result)=>{
+        if(!result) return;
+        const hit = isIsbn13(result.getText ? result.getText() : result.text);
+        if(hit) done(hit);
+      });
+      bookStop = ()=>{ try{ ctrl.stop(); }catch(e){} video.style.display = "none"; bookStop = null; };
+    }
+  }catch(e){
+    video.style.display = "none";
+    res.textContent = "カメラを使えませんでした（許可されていないか、対応していません）。下の欄に13桁を入れてください。";
+    bookStop = null;
+  }
+}
+function setupBook(){
+  const btn = document.getElementById("bookBtn");
+  const box = document.getElementById("bookBox");
+  if(!btn || !box) return;
+  btn.onclick = ()=>{
+    const open = box.style.display === "none";
+    box.style.display = open ? "" : "none";
+    if(open){
+      if(window.showTab) window.showTab("きろく");
+      box.scrollIntoView({ behavior:"smooth", block:"center" });
+    }else if(bookStop) bookStop();
+  };
+  document.getElementById("bookScan").onclick = bookScanStart;
+  document.getElementById("bookLookup").onclick = ()=>{
+    const v = isIsbn13(document.getElementById("bookIsbn").value);
+    if(!v){ toast("ISBNは978か979ではじまる13桁です"); return; }
+    bookFromIsbn(v);
+  };
+}
+
 /* ---------- 学習アプリからの取り込み ----------
    受け取る形（司法書士ドリル・世界史一問一答の書き出しと同じ）:
    { format:"manabi-log-entries", app:"アプリ名", entries:[
@@ -3269,6 +3439,7 @@ function setupMaterials(){
   setupVideoMenu();
   setupDayText();
   setupAppImport();
+  setupBook();
   if(window.rebuildTabs) window.rebuildTabs();
   render();
   // Enterで保存（内容欄）
