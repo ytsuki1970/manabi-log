@@ -317,8 +317,10 @@
   .entry .memo{font-size:12.5px; color:var(--muted); margin-top:5px; white-space:pre-wrap; word-break:break-word;}
   .entry .side{display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:none;}
   .entry .min{font-family:var(--num); font-size:12.5px; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums;}
-  .entry .del{font-size:11.5px; color:var(--hint); cursor:pointer; opacity:0; transition:.14s;}
-  .entry:hover .del{opacity:1;}
+  .entry .del, .entry .edit{font-size:11.5px; color:var(--hint); cursor:pointer; opacity:0; transition:.14s;}
+  .entry:hover .del, .entry:hover .edit{opacity:1;}
+  .entry .edit:hover{color:var(--accent);}
+  @media (hover:none){ .entry .edit{opacity:.55;} }
   .entry .del:hover{color:#c0392b;}
   @media (hover:none){ .entry .del{opacity:.55;} }
   .date-head{
@@ -791,8 +793,30 @@
 /* --- 統合時の調整（パシャ暗記をまなびログの1セクションとして収める） --- */
 #anki-app{display:block; margin:22px 0 0; border-radius:var(--radius);
   border:1px solid var(--border); padding-bottom:4px;}
-#anki-app .topbar{position:static;}
 #anki-app .stat::before{content:none;}
+
+/* --- 見た目をまなびログに合わせる ---
+   下地・文字・罫だけ本体の色に差し替える。デッキの色分け（クレイ/ピンク等）は残す。
+   ダークもOSに追従させる（自前トグルで .dark を付けたときはそちらが勝つ）。 */
+#anki-app{
+  --paper:transparent;
+  --paper-2:#ffffff;
+  --ink:#0f2340;
+  --ink-soft:#65748f;
+  --line:#d7e0ee;
+  --primary:#1546a0;
+  --primary-d:#103a86;
+  --radius:12px;
+}
+/* タブ名で分かるので二重の見出しは消す。ただし⚙️メニューは残す（音声設定などの入口） */
+#anki-app .topbar{position:static; background:transparent; border:none; box-shadow:none; padding:0;}
+#anki-app .topbar .logo{display:none;}
+#anki-app .topbar-in{padding:0; min-height:0; justify-content:flex-end;}
+@media (prefers-color-scheme: dark){
+  #anki-app:not(.light){
+    --paper:transparent; --paper-2:#0e1826; --ink:#e6edf9; --ink-soft:#93a3bd; --line:#22314a;
+  }
+}
 </style>
 
 </head>
@@ -1321,7 +1345,8 @@ function renderEntries(){
         ${e.memo ? `<div class="memo"></div>` : ""}
       </div>
       <div class="side">
-        <span class="min">${e.minutes? e.minutes+"分":"—"}</span>
+        <span class="min">${eMin(e) ? eMin(e)+"分" : "—"}</span>
+        <span class="edit" data-id="${e.id}">直す</span>
         <span class="del" data-id="${e.id}">削除</span>
       </div>`;
     row.querySelector(".t").textContent = e.title;
@@ -1337,6 +1362,40 @@ function renderEntries(){
       toast("削除しました");
     };
   });
+  box.querySelectorAll(".edit").forEach(b=>{
+    b.onclick = ()=> startEdit(b.dataset.id);
+  });
+}
+
+/* ---------- 記録を直す ---------- */
+let editingEntryId = null;
+function startEdit(id){
+  const e = entries.find(x=> x.id === id );
+  if(!e) return;
+  editingEntryId = id;
+  selCat = e.category;
+  selFeel = eFeel(e);
+  buildChips();
+  openRecordForm(true);
+  document.getElementById("title").value = e.title || "";
+  document.getElementById("mins").value = eMin(e) || "";
+  document.getElementById("memo").value = e.memo || "";
+  document.getElementById("date").value = e.date;
+  document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".feel").forEach(x=> x.classList.toggle("on", x.dataset.f === selFeel) );
+  const more = document.getElementById("more");
+  if(!more.classList.contains("open")){
+    more.classList.add("open");
+    document.getElementById("moreToggle").textContent = "－ 閉じる";
+  }
+  document.getElementById("save").textContent = "この内容で直す";
+  document.getElementById("recToggle").textContent = "－ 編集をやめる";
+  toast("直したら「この内容で直す」を押してください");
+}
+function endEdit(){
+  editingEntryId = null;
+  const save = document.getElementById("save");
+  if(save) save.textContent = "記録する";
 }
 
 /* ---------- 入力UI ---------- */
@@ -1536,34 +1595,89 @@ async function save(){
   if(!title){ toast("内容を入力してください"); document.getElementById("title").focus(); return; }
   const mins = parseInt(document.getElementById("mins").value,10) || 0;
   const date = document.getElementById("date").value || ymd(new Date());
+  const editing = editingEntryId ? entries.find(x=> x.id === editingEntryId ) : null;
   const obj = {
-    id: (Date.now().toString(36) + Math.floor(Math.random()*1e6).toString(36)),
+    id: editing ? editing.id : (Date.now().toString(36) + Math.floor(Math.random()*1e6).toString(36)),
     date, category: selCat, title, minutes: mins,
     feeling: selFeel, memo: document.getElementById("memo").value.trim(),
-    createdAt: Date.now()
+    createdAt: editing ? (editing.createdAt || Date.now()) : Date.now()
   };
   await putEntry(obj);
-  entries.push(obj);
+  if(editing) entries[entries.indexOf(editing)] = obj;
+  else entries.push(obj);
+  const wasEditing = !!editing;
   resetForm();
   render();
-  toast("記録しました 🌱");
+  toast(wasEditing ? "直しました" : "記録しました 🌱");
 }
 
 /* ---------- バックアップ ---------- */
-function exportJSON(){
+/* 暗記タブ（パシャ暗記）のデータは別のDB(sugoi-anki)にある。
+   バックアップに含めないと端末が壊れたとき戻せないので、まとめて出し入れする。 */
+function openAnkiDB(){
+  return new Promise((res, rej)=>{
+    const r = indexedDB.open("sugoi-anki");
+    r.onsuccess = e=> res(e.target.result);
+    r.onerror = ()=> rej(r.error);
+    r.onblocked = ()=> rej(new Error("blocked"));
+  });
+}
+async function ankiExport(){
+  try{
+    const db = await openAnkiDB();
+    if(!db.objectStoreNames.contains("decks")){ db.close(); return []; }
+    const decks = await new Promise(res=>{
+      const q = db.transaction("decks","readonly").objectStore("decks").getAll();
+      q.onsuccess = ()=> res(q.result || []);
+      q.onerror = ()=> res([]);
+    });
+    db.close();
+    return decks;
+  }catch(e){ return []; }
+}
+async function ankiImport(decks){
+  if(!Array.isArray(decks) || !decks.length) return 0;
+  try{
+    const db = await openAnkiDB();
+    if(!db.objectStoreNames.contains("decks")){ db.close(); return 0; }
+    await new Promise((res, rej)=>{
+      const tx = db.transaction("decks","readwrite");
+      const st = tx.objectStore("decks");
+      decks.forEach(d=>{ if(d && d.id) st.put(d); });
+      tx.oncomplete = res; tx.onerror = ()=> rej(tx.error);
+    });
+    db.close();
+    return decks.length;
+  }catch(e){ return 0; }
+}
+/* 暗記タブの設定など。APIキーは秘密なのでバックアップに入れない。 */
+function ankiPrefs(){
+  const out = {};
+  Object.keys(localStorage).forEach(k=>{
+    if(!/^(sugoi|pasha)-/.test(k)) return;
+    if(k === "pasha-anki-key") return;          // APIキーは持ち出さない
+    out[k] = localStorage.getItem(k);
+  });
+  return out;
+}
+
+async function exportJSON(){
   const checks = Object.keys(mchecked).map(id=>({ id, ts:mchecked[id] }));
-  // PDFの実ファイルは大きいのでバックアップには含めない（項目は残り、ファイルだけ入れ直しになる）
   const mats = materials.map(m=> JSON.parse(JSON.stringify(m)) );
+  const decks = await ankiExport();
+  const cards = decks.reduce((s,d)=> s + ((d.cards||[]).length), 0);
   const data = JSON.stringify({
-    app:"manabi-log", version:5, exportedAt:new Date().toISOString(),
-    entries, cats:categories, materials:mats, checks
+    app:"manabi-log", version:6, exportedAt:new Date().toISOString(),
+    entries, cats:categories, materials:mats, checks,
+    anki:{ decks, prefs:ankiPrefs() }
   }, null, 2);
+  const mb = data.length / 1048576;
   const blob = new Blob([data], { type:"application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = `manabi-log-${ymd(new Date())}.json`;
   a.click(); URL.revokeObjectURL(url);
-  toast("バックアップを書き出しました（PDFの実ファイルは含みません）");
+  toast(`書き出しました：記録${entries.length}・教材${mats.length}・暗記帳${decks.length}（${cards}枚）／${mb.toFixed(1)}MB`);
 }
 function importJSON(ev){
   const file = ev.target.files[0];
@@ -1584,9 +1698,13 @@ function importJSON(ev){
           });
         });
       }
+      const anki = (!Array.isArray(data) && data.anki) ? data.anki : null;
+      const decks = anki && Array.isArray(anki.decks) ? anki.decks : [];
+      const cards = decks.reduce((s,d)=> s + ((d.cards||[]).length), 0);
       const msg = `${list.length}件の記録を読み込みます。同じIDは上書きされます。`
         + (mats.length   ? `\n教材${mats.length}件も復元します（PDFの実ファイルは含まれません）。` : "")
         + (checks.length ? `\nチェック${checks.length}件も復元します。` : "")
+        + (decks.length  ? `\n暗記帳${decks.length}件（カード${cards}枚）も復元します。` : "")
         + "\nよろしいですか？";
       if(!confirm(msg)) return;
 
@@ -1611,11 +1729,21 @@ function importJSON(ev){
         await putCheck(rec);
         mchecked[rec.id] = rec.ts;
       }
+      let restored = 0;
+      if(decks.length) restored = await ankiImport(decks);
+      if(anki && anki.prefs){
+        Object.keys(anki.prefs).forEach(k=>{
+          if(k === "pasha-anki-key") return;
+          try{ localStorage.setItem(k, anki.prefs[k]); }catch(e){}
+        });
+      }
       entries = await getAll();
       buildChips();
       refreshMaterials();
       render();
-      toast(`${list.length}件を読み込みました`);
+      toast(restored
+        ? `${list.length}件と暗記帳${restored}件を読み込みました。暗記タブは再読み込みで反映されます`
+        : `${list.length}件を読み込みました`);
     }catch(err){ toast("読み込みに失敗しました"); }
     ev.target.value = "";
   };
@@ -2678,6 +2806,9 @@ function setupVideoMenu(){
 /* ---------- 学習内容をテキストで書き出す（ブログ転載用・1日／1週間／1か月） ---------- */
 let dtMode = "day";                       // day | week | month
 
+const eMin  = e=> parseInt(e.minutes != null ? e.minutes : e.mins, 10) || 0;
+const eFeel = e=> e.feeling || e.feel || "";
+
 const fmtMD  = d=> `${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
 const fmtYMD = d=> `${d.getFullYear()}年${fmtMD(d)}`;
 const addDays = (d,n)=>{ const x = new Date(d); x.setDate(x.getDate()+n); return x; };
@@ -2707,8 +2838,8 @@ function dayBlock(dateStr){
                       .sort((a,b)=> (a.createdAt||0) - (b.createdAt||0) );
   let mins = 0;
   list.forEach(e=>{
-    mins += (e.mins || 0);
-    lines.push(`■ ${e.category}　${e.mins || 0}分${e.feel ? "　" + e.feel : ""}`);
+    mins += eMin(e);
+    lines.push(`■ ${e.category}　${eMin(e)}分${eFeel(e) ? "　" + eFeel(e) : ""}`);
     if(e.title) lines.push(e.title);
     if(e.memo)  lines.push(...String(e.memo).split("\n").map(s=>s.trim()).filter(Boolean));
     lines.push("");
@@ -2738,7 +2869,7 @@ function rangeText(){
     const b = dayBlock(key);
     if(!b.has) continue;
     days++; total += b.mins; count += b.count;
-    b.entries.forEach(e=>{ byCat[e.category] = (byCat[e.category] || 0) + (e.mins || 0); });
+    b.entries.forEach(e=>{ byCat[e.category] = (byCat[e.category] || 0) + eMin(e); });
     blocks.push({ d:new Date(d), b });
   }
 
@@ -2855,6 +2986,7 @@ function closeRecordForm(){
   btn.setAttribute("aria-expanded", "false");
   btn.textContent = "＋ 今日の学びを記録する";
   if(mng) mng.style.display = "none";
+  endEdit();
 }
 function setupRecordToggle(){
   const btn = document.getElementById("recToggle");
@@ -3047,8 +3179,8 @@ async function importAppEntries(text){
       date: e.date,
       category: cat,
       title: e.title || app,
-      mins: Math.max(0, parseInt(e.mins, 10) || 0),
-      feel: e.feel || "",
+      minutes: Math.max(0, parseInt(e.mins != null ? e.mins : e.minutes, 10) || 0),
+      feeling: e.feel || e.feeling || "",
       memo: e.memo || "",
       createdAt: Date.now()
     });
