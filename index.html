@@ -948,6 +948,17 @@
     <textarea id="dayTextArea" rows="12" spellcheck="false"></textarea>
     <div class="m-ed-hint">ブログに貼れる形にしてあります。この欄で直接直してからコピーもできます。</div>
   </div>
+  <div class="card" id="appImportBox" style="display:none;">
+    <div class="card-title" style="padding:0;"><span>学習アプリから取り込む</span></div>
+    <div class="m-ed-hint">司法書士ドリルや世界史一問一答の「まなびログへ書き出す」で出したものを、
+そのまま貼り付けるか、ファイルを選んでください。同じ日の同じ内容は上書きされるので、二重にはなりません。</div>
+    <textarea id="appImportArea" rows="5" spellcheck="false" placeholder='ここに貼り付け'></textarea>
+    <div class="dt-head" style="margin-top:8px;">
+      <button type="button" class="btn ghost sm" id="appImportRun">取り込む</button>
+      <label class="btn ghost sm" style="cursor:pointer;">ファイルを選ぶ
+        <input type="file" id="appImportFile" accept=".json,application/json" class="hidden"></label>
+    </div>
+  </div>
   <div id="entries"></div>
 </section>
 
@@ -977,6 +988,7 @@
 </section>
 <div class="footer">
   <button class="btn ghost" id="addMaterialBtn">＋ 教材を追加</button>
+  <button class="btn ghost" id="appImportBtn">📥 アプリから取り込む</button>
   <button class="btn ghost" id="exportBtn">バックアップ書き出し</button>
   <button class="btn ghost" id="importBtn">読み込み</button>
   <input type="file" id="importFile" accept="application/json" class="hidden">
@@ -2785,6 +2797,77 @@ function setupDayText(){
   };
 }
 
+/* ---------- 学習アプリからの取り込み ----------
+   受け取る形（司法書士ドリル・世界史一問一答の書き出しと同じ）:
+   { format:"manabi-log-entries", app:"アプリ名", entries:[
+       { date:"YYYY-MM-DD", category:"法律", title:"…", mins:25, feel:"○", memo:"…" } ] }
+   idは app+date+title から決まるので、同じものを2回入れても増えない。 */
+function importKey(app, e){
+  const s = `${app}|${e.date}|${e.title || ""}`;
+  let h = 0;
+  for(let i=0; i<s.length; i++){ h = (h*31 + s.charCodeAt(i)) | 0; }
+  return "imp_" + Math.abs(h).toString(36);
+}
+async function importAppEntries(text){
+  let data;
+  try{ data = JSON.parse(text); }
+  catch(e){ toast("読み取れませんでした（JSONの形ではありません）"); return; }
+  const list = Array.isArray(data) ? data : (data.entries || []);
+  const app = (data && data.app) || "学習アプリ";
+  if(!Array.isArray(list) || !list.length){ toast("取り込む記録がありませんでした"); return; }
+
+  const ok = list.filter(e=> e && e.date && /^\d{4}-\d{2}-\d{2}$/.test(e.date) );
+  if(!ok.length){ toast("日付のある記録が見つかりませんでした"); return; }
+  if(!confirm(`${app} から ${ok.length}件を取り込みます。よろしいですか？`)) return;
+
+  for(const e of ok){
+    const cat = e.category || app;
+    await ensureCat(cat);
+    await putEntry({
+      id: importKey(app, e),
+      date: e.date,
+      category: cat,
+      title: e.title || app,
+      mins: Math.max(0, parseInt(e.mins, 10) || 0),
+      feel: e.feel || "",
+      memo: e.memo || "",
+      createdAt: Date.now()
+    });
+  }
+  entries = await getAll();
+  buildChips();
+  render();
+  toast(`${app} から ${ok.length}件を取り込みました`);
+}
+function setupAppImport(){
+  const btn = document.getElementById("appImportBtn");
+  const box = document.getElementById("appImportBox");
+  const ta  = document.getElementById("appImportArea");
+  if(!btn || !box) return;
+  btn.onclick = ()=>{
+    const open = box.style.display === "none";
+    box.style.display = open ? "" : "none";
+    if(open){
+      if(window.showTab) window.showTab("きろく");
+      box.scrollIntoView({ behavior:"smooth", block:"center" });
+      ta.focus();
+    }
+  };
+  document.getElementById("appImportRun").onclick = async ()=>{
+    const t = ta.value.trim();
+    if(!t){ toast("貼り付けてから押してください"); return; }
+    await importAppEntries(t);
+    ta.value = "";
+  };
+  document.getElementById("appImportFile").onchange = ev=>{
+    const f = ev.target.files[0];
+    if(!f) return;
+    const r = new FileReader();
+    r.onload = async ()=>{ await importAppEntries(String(r.result)); ev.target.value = ""; };
+    r.readAsText(f);
+  };
+}
+
 /* ---------- 教材の編集（追加・削除） ---------- */
 const UNIT_PRESETS = [
   { unit:"分",   itemWord:"本",       hint:"動画・音声の講座向け" },
@@ -3185,6 +3268,7 @@ function setupMaterials(){
   setupMaterials();
   setupVideoMenu();
   setupDayText();
+  setupAppImport();
   if(window.rebuildTabs) window.rebuildTabs();
   render();
   // Enterで保存（内容欄）
