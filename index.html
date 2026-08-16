@@ -434,6 +434,11 @@
   .m-ed-bulk{margin-top:10px;}
   .m-ed-bulk>summary{font-size:12px; color:var(--accent); cursor:pointer; user-select:none; margin-bottom:6px;}
 
+/* === 記録フォームの開閉 === */
+  .rec-toggle{font-family:inherit; font-size:15px; font-weight:600; cursor:pointer;
+    padding:0; border:none; background:none; color:var(--accent); text-align:left;}
+  .rec-toggle:hover{text-decoration:underline;}
+
 /* === 動画メニュー === */
   .hd-right{display:flex; align-items:center; gap:10px;}
   .hd-btn{font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
@@ -873,7 +878,11 @@
 
 <section data-tab="きろく">
   <div class="card">
-    <div class="card-title"><span>＋ 今日の学びをさっと記録</span><span class="manage-link" id="manageCats">項目を編集</span></div>
+    <div class="card-title">
+      <button type="button" class="rec-toggle" id="recToggle" aria-expanded="false">＋ 今日の学びを記録する</button>
+      <span class="manage-link" id="manageCats" style="display:none;">項目を編集</span>
+    </div>
+    <div id="recBody" hidden>
     <div class="cat-manager" id="catManager">
       <div class="cm-list" id="cmList"></div>
       <div class="cm-divider"></div>
@@ -917,6 +926,7 @@
       </div>
     </div>
     <button class="btn block" id="save">記録する</button>
+    </div>
   </div>
 </section>
 
@@ -1518,6 +1528,7 @@ function resetForm(){
   document.querySelectorAll(".feel").forEach(x=>x.classList.remove("on"));
   selFeel = "";
   document.getElementById("date").value = ymd(new Date());
+  closeRecordForm();          // 記録し終わったら畳んで、一覧が見える状態に戻す
 }
 
 async function save(){
@@ -1752,6 +1763,8 @@ function tReset(){
 function tReflect(){
   const sm = Math.round(currentStudyMs()/60000);
   if(sm<=0){ toast("まだ計測がありません"); return; }
+  if(window.showTab) window.showTab("きろく");
+  openRecordForm(false);
   const minsInput=document.getElementById("mins");
   minsInput.value = sm;
   document.querySelectorAll(".preset").forEach(x=>x.classList.remove("on"));
@@ -2539,6 +2552,8 @@ async function materialReflect(m){
   await ensureCat(m.cat || m.name);
   selCat = m.cat || m.name;
   buildChips();
+  if(window.showTab) window.showTab("きろく");
+  openRecordForm(false);          // 反映先が閉じていると行方不明になるので開く
 
   let title;
   if(m.reflectMode === "range" && today.length > 1 && today[0].it.no != null){
@@ -2814,6 +2829,40 @@ function setupDayText(){
     a.href = url; a.download = `まなびログ-${name}.txt`;
     a.click(); URL.revokeObjectURL(url);
     toast("テキストを保存しました");
+  };
+}
+
+/* ---------- 記録フォームの開閉 ----------
+   普段は閉じておき、押したときだけ開く。
+   教材やタイマーから「記録に反映」したときは、行き先が見えないと困るので自動で開く。 */
+function openRecordForm(scroll){
+  const body = document.getElementById("recBody");
+  const btn  = document.getElementById("recToggle");
+  const mng  = document.getElementById("manageCats");
+  if(!body) return;
+  body.hidden = false;
+  btn.setAttribute("aria-expanded", "true");
+  btn.textContent = "－ 記録欄を閉じる";
+  if(mng) mng.style.display = "";
+  if(scroll) body.scrollIntoView({ behavior:"smooth", block:"center" });
+}
+function closeRecordForm(){
+  const body = document.getElementById("recBody");
+  const btn  = document.getElementById("recToggle");
+  const mng  = document.getElementById("manageCats");
+  if(!body) return;
+  body.hidden = true;
+  btn.setAttribute("aria-expanded", "false");
+  btn.textContent = "＋ 今日の学びを記録する";
+  if(mng) mng.style.display = "none";
+}
+function setupRecordToggle(){
+  const btn = document.getElementById("recToggle");
+  if(!btn) return;
+  btn.onclick = ()=>{
+    const open = document.getElementById("recBody").hidden;
+    if(open){ openRecordForm(false); if(window.showTab) window.showTab("きろく"); }
+    else closeRecordForm();
   };
 }
 
@@ -3440,6 +3489,7 @@ function setupMaterials(){
   setupDayText();
   setupAppImport();
   setupBook();
+  setupRecordToggle();
   if(window.rebuildTabs) window.rebuildTabs();
   render();
   // Enterで保存（内容欄）
