@@ -1040,6 +1040,8 @@
 <input id="filePdf" type="file" accept=".pdf,application/pdf" class="hidden">
 </section>
 <div class="footer">
+  <button class="btn ghost" id="syncBtn">☁ 同期</button>
+  <span id="syncState" style="font-size:11.5px; color:var(--hint); align-self:center;"></span>
   <button class="btn ghost" id="addMaterialBtn">＋ 教材を追加</button>
   <button class="btn ghost" id="appImportBtn">📥 アプリから取り込む</button>
   <button class="btn ghost" id="bookBtn">📷 参考書を登録</button>
@@ -1135,12 +1137,12 @@ function store(name, mode){ return db.transaction(name, mode).objectStore(name);
 function reqP(r){ return new Promise((res, rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 
 function getAll(){ return reqP(store("entries","readonly").getAll()).then(r=>r||[]); }
-function putEntry(o){ return reqP(store("entries","readwrite").put(o)); }
-function delEntry(id){ return reqP(store("entries","readwrite").delete(id)); }
+function putEntry(o){ syncMark("entry", o.id); return reqP(store("entries","readwrite").put(o)); }
+function delEntry(id){ syncMark("entry", id, true); return reqP(store("entries","readwrite").delete(id)); }
 
 function getAllCats(){ return reqP(store("cats","readonly").getAll()).then(r=>r||[]); }
-function putCat(o){ return reqP(store("cats","readwrite").put(o)); }
-function delCat(name){ return reqP(store("cats","readwrite").delete(name)); }
+function putCat(o){ syncMark("cat", o.name); return reqP(store("cats","readwrite").put(o)); }
+function delCat(name){ syncMark("cat", name, true); return reqP(store("cats","readwrite").delete(name)); }
 
 function getAllTadoku(){ return reqP(store("tadoku","readonly").getAll()).then(r=>r||[]); }
 function putTadoku(o){ return reqP(store("tadoku","readwrite").put(o)); }
@@ -1155,12 +1157,12 @@ function putNs(o){ return reqP(store("nihonshi","readwrite").put(o)); }
 function delNs(id){ return reqP(store("nihonshi","readwrite").delete(id)); }
 
 function getAllMaterials(){ return reqP(store("materials","readonly").getAll()).then(r=>r||[]); }
-function putMaterial(o){ return reqP(store("materials","readwrite").put(o)); }
-function delMaterial(id){ return reqP(store("materials","readwrite").delete(id)); }
+function putMaterial(o){ syncMark("material", o.id); return reqP(store("materials","readwrite").put(o)); }
+function delMaterial(id){ syncMark("material", id, true); return reqP(store("materials","readwrite").delete(id)); }
 
 function getAllCheck(){ return reqP(store("mcheck","readonly").getAll()).then(r=>r||[]); }
-function putCheck(o){ return reqP(store("mcheck","readwrite").put(o)); }
-function delCheck(id){ return reqP(store("mcheck","readwrite").delete(id)); }
+function putCheck(o){ syncMark("check", o.id); return reqP(store("mcheck","readwrite").put(o)); }
+function delCheck(id){ syncMark("check", id, true); return reqP(store("mcheck","readwrite").delete(id)); }
 function getFile(id){ return reqP(store("files","readonly").get(id)); }
 function putFile(o){ return reqP(store("files","readwrite").put(o)); }
 function delFile(id){ return reqP(store("files","readwrite").delete(id)); }
@@ -3593,6 +3595,145 @@ function setupMaterials(){
 }
 
 
+/* ---------- 端末間の同期 ----------
+   仕組み：書き込みのたびに「変わったもの」を控えておき（pending）、
+   同期のときに サーバへ送る → 前回以降に他の端末が変えたぶんを受け取る。
+   1件ずつIDで突き合わせるので、2台で別々に書いても両方残る。
+   サーバはログイン必須。ログインしていない場合は静かに何もしない。 */
+
+const SYNC_URL   = "/api/sync";
+const SYNC_SINCE = "manabi-sync-since";
+const SYNC_PEND  = "manabi-sync-pending";
+let syncApplying = false;      // 受信を適用している間は、控えに積まない
+let syncTimer = null;
+
+function pendLoad(){ try{ return JSON.parse(localStorage.getItem(SYNC_PEND)) || {}; }catch(e){ return {}; } }
+function pendSave(p){ try{ localStorage.setItem(SYNC_PEND, JSON.stringify(p)); }catch(e){} }
+function syncMark(kind, id, deleted){
+  if(syncApplying) return;
+  const p = pendLoad();
+  p[kind + "|" + id] = { kind, id, updated: Date.now(), deleted: !!deleted };
+  pendSave(p);
+  syncSoon();
+}
+function syncSoon(){
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(()=> syncNow(true), 3000);
+}
+
+/* 送るときの中身を取り出す */
+function syncBody(kind, id){
+  if(kind === "entry")    return entries.find(e=> e.id === id ) || null;
+  if(kind === "cat")      return categories.find(c=> c.name === id ) || null;
+  if(kind === "material") return materials.find(m=> m.id === id ) || null;
+  if(kind === "check")    return mchecked[id] ? { ts: mchecked[id] } : null;
+  return null;
+}
+
+/* 受け取ったものを手元へ反映する */
+async function syncApply(list){
+  syncApplying = true;
+  let touched = { entry:0, cat:0, material:0, check:0 };
+  for(const c of list){
+    try{
+      if(c.kind === "entry"){
+        if(c.deleted){ await delEntry(c.id); entries = entries.filter(e=> e.id !== c.id ); }
+        else if(c.data){
+          await putEntry(c.data);
+          const i = entries.findIndex(e=> e.id === c.id );
+          if(i >= 0) entries[i] = c.data; else entries.push(c.data);
+        }
+        touched.entry++;
+      }else if(c.kind === "cat"){
+        if(c.deleted){ await delCat(c.id); categories = categories.filter(x=> x.name !== c.id ); }
+        else if(c.data){
+          await putCat(c.data);
+          const i = categories.findIndex(x=> x.name === c.id );
+          if(i >= 0) categories[i] = c.data; else categories.push(c.data);
+        }
+        touched.cat++;
+      }else if(c.kind === "material"){
+        if(c.deleted){ await delMaterial(c.id); materials = materials.filter(m=> m.id !== c.id ); }
+        else if(c.data){
+          await putMaterial(c.data);
+          const i = materials.findIndex(m=> m.id === c.id );
+          if(i >= 0) materials[i] = c.data; else materials.push(c.data);
+        }
+        touched.material++;
+      }else if(c.kind === "check"){
+        if(c.deleted){ await delCheck(c.id); delete mchecked[c.id]; }
+        else if(c.data){
+          const ts = c.data.ts || c.updated;
+          await putCheck({ id:c.id, ts });
+          mchecked[c.id] = ts;
+        }
+        touched.check++;
+      }
+    }catch(e){ /* 1件失敗しても他は続ける */ }
+  }
+  syncApplying = false;
+  return touched;
+}
+
+function syncStatus(msg){
+  const el = document.getElementById("syncState");
+  if(el) el.textContent = msg || "";
+}
+
+async function syncNow(quiet){
+  if(!navigator.onLine){ if(!quiet) toast("オフラインです"); return; }
+  const pend = pendLoad();
+  const changes = Object.values(pend).map(p=>({
+    kind:p.kind, id:p.id, updated:p.updated, deleted:p.deleted,
+    data: p.deleted ? null : syncBody(p.kind, p.id)
+  })).filter(c=> c.deleted || c.data );
+
+  let since = 0;
+  try{ since = parseInt(localStorage.getItem(SYNC_SINCE), 10) || 0; }catch(e){}
+
+  syncStatus("同期中…");
+  try{
+    const r = await fetch(SYNC_URL, {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ since, changes })
+    });
+    if(r.status === 401 || r.redirected){
+      syncStatus("ログインが必要です");
+      if(!quiet) toast("同期するにはログインが必要です。ページを開き直してください");
+      return;
+    }
+    if(!r.ok){ syncStatus("同期できませんでした"); if(!quiet) toast("同期できませんでした"); return; }
+    const res = await r.json();
+
+    const got = await syncApply(res.changes || []);
+    pendSave({});                                   // 送れたぶんは控えを消す
+    try{ localStorage.setItem(SYNC_SINCE, String(res.now)); }catch(e){}
+
+    categories.sort((a,b)=>(a.order||0)-(b.order||0));
+    buildChips();
+    refreshMaterials();
+    render();
+
+    const n = (res.changes || []).length;
+    const d = new Date();
+    syncStatus(`同期済み ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`);
+    if(!quiet) toast(n ? `送信${changes.length}件・受信${n}件` : `同期しました（送信${changes.length}件）`);
+  }catch(e){
+    syncStatus("同期できませんでした");
+    if(!quiet) toast("同期できませんでした（通信を確認してください）");
+  }
+}
+
+function setupSync(){
+  const btn = document.getElementById("syncBtn");
+  if(btn) btn.onclick = ()=> syncNow(false);
+  window.addEventListener("online", ()=> syncSoon());
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) syncSoon(); });
+  setTimeout(()=> syncNow(true), 1500);            // 起動時に一度
+  setInterval(()=> syncNow(true), 5 * 60 * 1000);  // 5分ごと
+}
+
 /* ---------- 起動 ---------- */
 (async function init(){
   document.getElementById("today").textContent = todayStr();
@@ -3622,6 +3763,7 @@ function setupMaterials(){
   setupAppImport();
   setupBook();
   setupRecordToggle();
+  setupSync();
   if(window.rebuildTabs) window.rebuildTabs();
   render();
   // Enterで保存（内容欄）
